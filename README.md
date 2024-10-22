@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # miniDBMS
 =======
 ### Start MongoDB:
@@ -32,4 +31,3 @@ drop table Departments
 createindex unique idx_cnp Employees cnp
 drop database Company
 ```
->>>>>>> 91bc25b (Initial commit)
