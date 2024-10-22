@@ -1,5 +1,4 @@
 # miniDBMS
-=======
 ### Start MongoDB:
 ```bash
 brew services start mongodb/brew/mongodb-community
