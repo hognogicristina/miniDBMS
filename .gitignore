@@ -21,8 +21,6 @@ rad.json
 *.flf
 #Test results file
 TestResults.xml
-=======
 .DS_Store
 .idea
 node_modules
->>>>>>> 91bc25b (Initial commit)
