@@ -32,7 +32,6 @@
                         {
                             "indexName": "idx_name.ind",
                             "isUnique": 0,
-                            "indexType": "BTree",
                             "indexAttributes": [
                                 "name"
                             ]
@@ -86,7 +85,6 @@
                         {
                             "indexName": "idx_title.ind",
                             "isUnique": 1,
-                            "indexType": "BTree",
                             "indexAttributes": [
                                 "title"
                             ]
@@ -139,7 +137,6 @@
                         {
                             "indexName": "idx_specialty.ind",
                             "isUnique": 0,
-                            "indexType": "BTree",
                             "indexAttributes": [
                                 "specialty"
                             ]
@@ -193,12 +190,67 @@
                         {
                             "indexName": "idx_cnp.ind",
                             "isUnique": 1,
-                            "indexType": "BTree",
                             "indexAttributes": [
                                 "cnp"
                             ]
                         }
                     ]
+                },
+                {
+                    "tableName": "Appointments",
+                    "fileName": "Hospital_Appointments",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 0
+                            },
+                            {
+                                "attributeName": "patient_id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 1
+                            },
+                            {
+                                "attributeName": "doctor_id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 1
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "patient_id"
+                            ],
+                            "references": {
+                                "refTable": "Patients",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        {
+                            "fkAttributes": [
+                                "doctor_id"
+                            ],
+                            "references": {
+                                "refTable": "Doctors",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": []
                 }
             ]
         }

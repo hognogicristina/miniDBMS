@@ -174,6 +174,19 @@ async function handleCreate(command, socket) {
                 return;
               }
               const [refTable, refColumn] = foreignKeyParts;
+
+              const referencedTable = dbEntry.tables.find(t => t.tableName === refTable);
+              if (!referencedTable) {
+                socket.write(`Error: Referenced table ${refTable} does not exist`);
+                return;
+              }
+
+              const refColumnExists = referencedTable.structure.attributes.some(attr => attr.attributeName === refColumn);
+              if (!refColumnExists) {
+                socket.write(`Error: Referenced column ${refColumn} does not exist in table ${refTable}`);
+                return;
+              }
+
               foreignKeys.push({
                 fkAttributes: [columnName],
                 references: {refTable: refTable, refAttributes: [refColumn]}
@@ -349,7 +362,6 @@ async function handleCreateIndex(command, socket) {
     const indexEntry = {
       indexName: collectionName,
       isUnique: isUnique ? 1 : 0,
-      indexType: "BTree",
       indexAttributes: [columnName]
     };
 

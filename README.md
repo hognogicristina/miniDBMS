@@ -40,8 +40,10 @@ create database Hospital
 use Hospital
 create table Doctors id int primary notnull, name varchar 255, specialty varchar 255, cnp int
 create table Patients id int primary notnull, name varchar 255, doctor_id int foreign=Doctors.id
+create table Appointments id int primary notnull, patient_id int foreign=Patients.id, doctor_id int foreign=Doctors.id
 drop table Patients
 drop table Doctors
+drop table Appointments
 createindex unique idx_cnp Patients cnp
 createindex idx_specialty Doctors specialty
 drop database Hospital
