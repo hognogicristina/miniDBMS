@@ -1,3 +1,206 @@
 {
-    "databases": []
+    "databases": [
+        {
+            "dataBaseName": "Library",
+            "tables": [
+                {
+                    "tableName": "Authors",
+                    "fileName": "Library_Authors",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 0
+                            },
+                            {
+                                "attributeName": "name",
+                                "type": "varchar",
+                                "length": 255,
+                                "isnull": 1
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [],
+                    "indexFiles": [
+                        {
+                            "indexName": "idx_name.ind",
+                            "isUnique": 0,
+                            "indexType": "BTree",
+                            "indexAttributes": [
+                                "name"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tableName": "Books",
+                    "fileName": "Library_Books",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 0
+                            },
+                            {
+                                "attributeName": "title",
+                                "type": "varchar",
+                                "length": 255,
+                                "isnull": 1
+                            },
+                            {
+                                "attributeName": "author_id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 1
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "author_id"
+                            ],
+                            "references": {
+                                "refTable": "Authors",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": [
+                        {
+                            "indexName": "idx_title.ind",
+                            "isUnique": 1,
+                            "indexType": "BTree",
+                            "indexAttributes": [
+                                "title"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "dataBaseName": "Hospital",
+            "tables": [
+                {
+                    "tableName": "Doctors",
+                    "fileName": "Hospital_Doctors",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 0
+                            },
+                            {
+                                "attributeName": "name",
+                                "type": "varchar",
+                                "length": 255,
+                                "isnull": 1
+                            },
+                            {
+                                "attributeName": "specialty",
+                                "type": "varchar",
+                                "length": 255,
+                                "isnull": 1
+                            },
+                            {
+                                "attributeName": "cnp",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 1
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [],
+                    "indexFiles": [
+                        {
+                            "indexName": "idx_specialty.ind",
+                            "isUnique": 0,
+                            "indexType": "BTree",
+                            "indexAttributes": [
+                                "specialty"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tableName": "Patients",
+                    "fileName": "Hospital_Patients",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 0
+                            },
+                            {
+                                "attributeName": "name",
+                                "type": "varchar",
+                                "length": 255,
+                                "isnull": 1
+                            },
+                            {
+                                "attributeName": "doctor_id",
+                                "type": "int",
+                                "length": null,
+                                "isnull": 1
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "doctor_id"
+                            ],
+                            "references": {
+                                "refTable": "Doctors",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": [
+                        {
+                            "indexName": "idx_cnp.ind",
+                            "isUnique": 1,
+                            "indexType": "BTree",
+                            "indexAttributes": [
+                                "cnp"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
 }

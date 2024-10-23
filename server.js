@@ -176,7 +176,7 @@ async function handleCreate(command, socket) {
               const [refTable, refColumn] = foreignKeyParts;
               foreignKeys.push({
                 fkAttributes: [columnName],
-                references: { refTable: refTable, refAttributes: [refColumn] }
+                references: {refTable: refTable, refAttributes: [refColumn]}
               });
             } else if (!isValidColumnModifier(part)) {
               socket.write(`Error: Invalid column modifier "${part}" in column ${columnName}`);
@@ -200,13 +200,15 @@ async function handleCreate(command, socket) {
         columns.push(column);
       }
 
+      const fileName = `${currentDatabase}_${tableName}`;
       const db = client.db(currentDatabase);
-      await db.createCollection(tableName);
+      await db.createCollection(fileName);
 
       const newTable = {
         tableName: tableName,
-        structure: { attributes: columns },
-        primaryKey: { pkAttributes: primaryKey },
+        fileName: fileName,
+        structure: {attributes: columns},
+        primaryKey: {pkAttributes: primaryKey},
         foreignKeys: foreignKeys,
         indexFiles: []
       };
@@ -239,7 +241,6 @@ async function handleDrop(command, socket) {
 
         socket.write(`Database ${dbName} dropped`);
       } catch (err) {
-        console.error(err);
         socket.write(`Error: Failed to drop database ${dbName}`);
       }
     }
@@ -265,17 +266,23 @@ async function handleDrop(command, socket) {
         return;
       }
 
-      const selfReferencingCheck = table.foreignKeys.some(fk => fk.references.refTable === tableName);
-
-      if (selfReferencingCheck) {
-        socket.write(`Error: Cannot drop table ${tableName}, it has self-referencing foreign keys`);
-        return;
-      }
-
       for (const indexFile of table.indexFiles) {
         const collectionName = indexFile.indexName;
-        const collection = client.db(currentDatabase).collection(collectionName);
-        await collection.drop();
+        try {
+          const collection = client.db(currentDatabase).collection(collectionName);
+          await collection.drop();
+        } catch (error) {
+          socket.write(`Error: Could not drop index collection ${collectionName}`);
+        }
+      }
+
+      const tableFileName = table.fileName;
+      try {
+        const tableCollection = client.db(currentDatabase).collection(tableFileName);
+        await tableCollection.drop();
+      } catch (error) {
+        socket.write(`Error: Could not drop table collection ${tableFileName}`);
+        return;
       }
 
       db.tables.splice(tableIndex, 1);
@@ -322,47 +329,36 @@ async function handleCreateIndex(command, socket) {
   const table = db.tables.find(t => t.tableName === tableName);
 
   if (!table) {
-    socket.write(`Error: Table ${tableName} does not exist in database ${currentDatabase}`);
+    socket.write('Error: Table ${tableName} does not exist in database ${currentDatabase}');
     return;
   }
 
-  const collection = client.db(currentDatabase).collection(tableName);
+  const existingIndex = table.indexFiles.find(index => index.indexName === `${indexName}.ind`);
+  if (existingIndex) {
+    socket.write(`Error: Index with the name ${indexName} already exists on table ${tableName}`);
+    return;
+  }
+
+  const collectionName = `${indexName}.ind`;
+  const collection = client.db(currentDatabase).collection(collectionName);
 
   try {
-    const indexOptions = isUnique ? { unique: true } : { unique: false };
-    await collection.createIndex({ [columnName]: 1 }, indexOptions);
-
-    const indexCollectionName = `${indexName}.ind`;
-    const indexCollection = client.db(currentDatabase).collection(indexCollectionName);
-    const indexMetadata = {
-      indexName: indexName,
-      tableName: tableName,
-      column: columnName,
-      isUnique: isUnique ? 1 : 0,
-      indexType: "BTree",
-      indexAttributes: [columnName]
-    };
-
-    await indexCollection.insertOne(indexMetadata);
+    const indexOptions = isUnique ? {unique: true} : {unique: false};
+    await collection.createIndex({[columnName]: 1}, indexOptions);
 
     const indexEntry = {
-      indexName: indexCollectionName,
+      indexName: collectionName,
       isUnique: isUnique ? 1 : 0,
       indexType: "BTree",
       indexAttributes: [columnName]
     };
-
-    if (!table.indexFiles) {
-      table.indexFiles = [];
-    }
 
     table.indexFiles.push(indexEntry);
     saveCatalog();
 
-    socket.write(`Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})`);
+    socket.write('Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})');
   } catch (error) {
-    console.error(error);
-    socket.write(`Error: Could not create index on ${columnName} in table ${tableName}`);
+    socket.write('Error: Could not create index on ${columnName} in table ${tableName}');
   }
 }
 
