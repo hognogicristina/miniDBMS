@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 # miniDBMS
-=======
 ### Start MongoDB:
 ```bash
 brew services start mongodb/brew/mongodb-community
@@ -32,4 +30,3 @@ drop table Departments
 createindex unique idx_cnp Employees cnp
 drop database Company
 ```
->>>>>>> 91bc25b (Initial commit)
