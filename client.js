@@ -14,7 +14,7 @@ client.connect(8989, '127.0.0.1', () => {
 
 client.on('data', (data) => {
   const message = data.toString().trim();
-  console.log('Server response: ' + message);
+  console.log('RESPONSE -> ' + message);
 
   if (message.toLowerCase() === 'exit') {
     console.log('Exiting...');

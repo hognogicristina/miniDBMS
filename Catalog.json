@@ -11,14 +11,12 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 0
+                                "length": null
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255,
-                                "isnull": 1
+                                "length": 255
                             }
                         ]
                     },
@@ -30,7 +28,7 @@
                     "foreignKeys": [],
                     "indexFiles": [
                         {
-                            "indexName": "idx_name.ind",
+                            "indexName": "name.ind",
                             "isUnique": 0,
                             "indexAttributes": [
                                 "name"
@@ -46,20 +44,17 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 0
+                                "length": null
                             },
                             {
                                 "attributeName": "title",
                                 "type": "varchar",
-                                "length": 255,
-                                "isnull": 1
+                                "length": 255
                             },
                             {
                                 "attributeName": "author_id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 1
+                                "length": null
                             }
                         ]
                     },
@@ -83,7 +78,7 @@
                     ],
                     "indexFiles": [
                         {
-                            "indexName": "idx_title.ind",
+                            "indexName": "title.ind",
                             "isUnique": 1,
                             "indexAttributes": [
                                 "title"
@@ -104,26 +99,22 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 0
+                                "length": null
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255,
-                                "isnull": 1
+                                "length": 255
                             },
                             {
                                 "attributeName": "specialty",
                                 "type": "varchar",
-                                "length": 255,
-                                "isnull": 1
+                                "length": 255
                             },
                             {
                                 "attributeName": "cnp",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 1
+                                "length": null
                             }
                         ]
                     },
@@ -135,7 +126,7 @@
                     "foreignKeys": [],
                     "indexFiles": [
                         {
-                            "indexName": "idx_specialty.ind",
+                            "indexName": "specialty.ind",
                             "isUnique": 0,
                             "indexAttributes": [
                                 "specialty"
@@ -151,20 +142,17 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 0
+                                "length": null
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255,
-                                "isnull": 1
+                                "length": 255
                             },
                             {
                                 "attributeName": "doctor_id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 1
+                                "length": null
                             }
                         ]
                     },
@@ -188,10 +176,17 @@
                     ],
                     "indexFiles": [
                         {
-                            "indexName": "idx_cnp.ind",
+                            "indexName": "cnp.ind",
                             "isUnique": 1,
                             "indexAttributes": [
                                 "cnp"
+                            ]
+                        },
+                        {
+                            "indexName": "name.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "name"
                             ]
                         }
                     ]
@@ -204,20 +199,17 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 0
+                                "length": null
                             },
                             {
                                 "attributeName": "patient_id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 1
+                                "length": null
                             },
                             {
                                 "attributeName": "doctor_id",
                                 "type": "int",
-                                "length": null,
-                                "isnull": 1
+                                "length": null
                             }
                         ]
                     },

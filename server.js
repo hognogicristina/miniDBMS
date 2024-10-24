@@ -18,7 +18,7 @@ if (fs.existsSync(catalogFile)) {
 async function connectMongo() {
   try {
     await client.connect();
-    console.log("Connected to MongoDB");
+    console.log(`Connected to MongoDB`);
   } catch (err) {
     console.error(err);
   }
@@ -38,12 +38,12 @@ const server = net.createServer((socket) => {
   });
 
   socket.on('end', () => {
-    console.log('Client disconnected');
+    console.log(`Client disconnected`);
   });
 });
 
 server.listen(8989, '127.0.0.1', () => {
-  console.log('Server listening on port 8989');
+  console.log(`Server listening on port 8989`);
 });
 
 async function handleCommand(command, socket) {
@@ -51,14 +51,14 @@ async function handleCommand(command, socket) {
   switch (cmd) {
     case 'create':
       if (command[1].toLowerCase() !== 'database' && command[1].toLowerCase() !== 'table') {
-        socket.write('Error: Invalid syntax. Use "create database" or "create table".');
+        socket.write(`ERROR: Invalid syntax. Use "create database" or "create table".`);
       } else {
         await handleCreate(command, socket);
       }
       break;
     case 'drop':
       if (command[1].toLowerCase() !== 'database' && command[1].toLowerCase() !== 'table') {
-        socket.write('Error: Invalid syntax. Use "drop database" or "drop table".');
+        socket.write(`ERROR: Invalid syntax. Use "drop database" or "drop table".`);
       } else {
         await handleDrop(command, socket);
       }
@@ -72,14 +72,14 @@ async function handleCommand(command, socket) {
       } else if (command[1].toLowerCase() === 'tables') {
         listTables(socket);
       } else {
-        socket.write('Error: Invalid syntax. Use "list databases" or "list tables".');
+        socket.write(`ERROR: Invalid syntax. Use "list databases" or "list tables".`);
       }
       break;
     case 'createindex':
       await handleCreateIndex(command, socket);
       break;
     default:
-      socket.write('Error: Invalid command');
+      socket.write('ERROR: Invalid command');
       break;
   }
 }
@@ -90,12 +90,12 @@ function isValidDataType(type, length) {
     return length && Number.isInteger(length) && length > 0;
   }
 
-  const validTypes = ['int', 'float', 'bool'];
+  const validTypes = ['int', 'float', 'bool', 'date'];
   return validTypes.includes(type);
 }
 
 function isValidColumnModifier(modifier) {
-  const validModifiers = ['primary', 'notnull'];
+  const validModifiers = ['primary'];
   if (modifier.startsWith('foreign=')) {
     return true;
   }
@@ -110,12 +110,12 @@ async function handleCreate(command, socket) {
     const dbName = command[2];
 
     if (!dbName) {
-      socket.write('Error: Database name required');
+      socket.write(`ERROR: Database name required`);
       return;
     }
 
     if (catalog.databases.find(db => db.dataBaseName === dbName)) {
-      socket.write(`Error: Database ${dbName} already exists`);
+      socket.write(`ERROR: Database ${dbName} already exists`);
       return;
     }
 
@@ -132,13 +132,13 @@ async function handleCreate(command, socket) {
       const columnsData = command.slice(3).join(' ');
 
       if (!tableName) {
-        socket.write('Error: Table name required');
+        socket.write(`ERROR: Table name required`);
         return;
       }
 
       const dbEntry = catalog.databases.find(db => db.dataBaseName === currentDatabase);
       if (dbEntry.tables.find(table => table.tableName === tableName)) {
-        socket.write(`Error: Table ${tableName} already exists in database ${currentDatabase}`);
+        socket.write(`ERROR: Table ${tableName} already exists in database ${currentDatabase}`);
         return;
       }
 
@@ -151,17 +151,16 @@ async function handleCreate(command, socket) {
       for (const definition of columnDefinitions) {
         const parts = definition.trim().split(' ');
         const columnName = parts[0];
-        const columnType = parts[1].toLowerCase();
+        const columnType = parts[1];
         const columnLength = parts[2] ? parseInt(parts[2], 10) : null;
-        const columnIsNull = parts.includes('notnull') ? 0 : 1;
 
         if (columnNames.has(columnName)) {
-          socket.write(`Error: Duplicate column name ${columnName}`);
+          socket.write(`ERROR: Duplicate column name ${columnName}`);
           return;
         }
 
         if (!isValidDataType(columnType, columnLength)) {
-          socket.write(`Error: Invalid data type for column ${columnName}`);
+          socket.write(`ERROR: Invalid data type for column ${columnName}`);
           return;
         }
 
@@ -170,20 +169,20 @@ async function handleCreate(command, socket) {
             if (part.startsWith('foreign=')) {
               const foreignKeyParts = part.split('=')[1].split('.');
               if (foreignKeyParts.length !== 2) {
-                socket.write(`Error: Invalid foreign key reference in column ${columnName}`);
+                socket.write(`ERROR: Invalid foreign key reference in column ${columnName}`);
                 return;
               }
               const [refTable, refColumn] = foreignKeyParts;
 
               const referencedTable = dbEntry.tables.find(t => t.tableName === refTable);
               if (!referencedTable) {
-                socket.write(`Error: Referenced table ${refTable} does not exist`);
+                socket.write(`ERROR: Referenced table ${refTable} does not exist`);
                 return;
               }
 
               const refColumnExists = referencedTable.structure.attributes.some(attr => attr.attributeName === refColumn);
               if (!refColumnExists) {
-                socket.write(`Error: Referenced column ${refColumn} does not exist in table ${refTable}`);
+                socket.write(`ERROR: Referenced column ${refColumn} does not exist in table ${refTable}`);
                 return;
               }
 
@@ -192,7 +191,7 @@ async function handleCreate(command, socket) {
                 references: {refTable: refTable, refAttributes: [refColumn]}
               });
             } else if (!isValidColumnModifier(part)) {
-              socket.write(`Error: Invalid column modifier "${part}" in column ${columnName}`);
+              socket.write(`ERROR: Invalid column modifier "${part}" in column ${columnName}`);
               return;
             }
           }
@@ -202,8 +201,7 @@ async function handleCreate(command, socket) {
         const column = {
           attributeName: columnName,
           type: columnType,
-          length: columnLength,
-          isnull: columnIsNull
+          length: columnLength
         };
 
         if (parts.includes('primary')) {
@@ -211,6 +209,16 @@ async function handleCreate(command, socket) {
         }
 
         columns.push(column);
+      }
+
+      if (columns.length === 0) {
+        socket.write(`ERROR: At least one column is required`);
+        return;
+      }
+
+      if (primaryKey.length === 0) {
+        socket.write(`ERROR: Primary key is required`);
+        return;
       }
 
       const fileName = `${currentDatabase}_${tableName}`;
@@ -231,7 +239,7 @@ async function handleCreate(command, socket) {
       socket.write(`Table ${tableName} created`);
 
     } else {
-      socket.write('Error: No database selected');
+      socket.write(`ERROR: No database selected`);
     }
   }
 }
@@ -243,7 +251,7 @@ async function handleDrop(command, socket) {
     const dbName = command[2];
     const dbIndex = catalog.databases.findIndex(db => db.dataBaseName === dbName);
     if (dbIndex === -1) {
-      socket.write(`Error: Database ${dbName} does not exist`);
+      socket.write(`ERROR: Database ${dbName} does not exist`);
     } else {
       try {
         const db = client.db(dbName);
@@ -254,7 +262,7 @@ async function handleDrop(command, socket) {
 
         socket.write(`Database ${dbName} dropped`);
       } catch (err) {
-        socket.write(`Error: Failed to drop database ${dbName}`);
+        socket.write(`ERROR: Failed to drop database ${dbName}`);
       }
     }
 
@@ -265,7 +273,7 @@ async function handleDrop(command, socket) {
       const tableIndex = db.tables.findIndex(t => t.tableName === tableName);
 
       if (tableIndex === -1) {
-        socket.write(`Error: Table ${tableName} does not exist in database ${currentDatabase}`);
+        socket.write(`ERROR: Table ${tableName} does not exist in database ${currentDatabase}`);
         return;
       }
 
@@ -275,7 +283,7 @@ async function handleDrop(command, socket) {
       );
 
       if (foreignKeyCheck) {
-        socket.write(`Error: Cannot drop table ${tableName}, it is referenced by other tables`);
+        socket.write(`ERROR: Cannot drop table ${tableName}, it is referenced by other tables`);
         return;
       }
 
@@ -285,7 +293,7 @@ async function handleDrop(command, socket) {
           const collection = client.db(currentDatabase).collection(collectionName);
           await collection.drop();
         } catch (error) {
-          socket.write(`Error: Could not drop index collection ${collectionName}`);
+          socket.write(`ERROR: Could not drop index collection ${collectionName}`);
         }
       }
 
@@ -294,7 +302,7 @@ async function handleDrop(command, socket) {
         const tableCollection = client.db(currentDatabase).collection(tableFileName);
         await tableCollection.drop();
       } catch (error) {
-        socket.write(`Error: Could not drop table collection ${tableFileName}`);
+        socket.write(`ERROR: Could not drop table collection ${tableFileName}`);
         return;
       }
 
@@ -303,7 +311,7 @@ async function handleDrop(command, socket) {
 
       socket.write(`Table ${tableName} dropped`);
     } else {
-      socket.write('Error: No database selected');
+      socket.write(`ERROR: No database selected`);
     }
   }
 }
@@ -314,45 +322,46 @@ function handleUse(command, socket) {
     currentDatabase = dbName;
     socket.write(`Using database ${dbName}`);
   } else {
-    socket.write(`Error: Database ${dbName} does not exist`);
+    socket.write(`ERROR: Database ${dbName} does not exist`);
   }
 }
 
 async function handleCreateIndex(command, socket) {
   if (!currentDatabase) {
-    socket.write('Error: No database selected');
+    socket.write(`ERROR: No database selected`);
     return;
   }
 
   const commandText = command.join(' ');
-  const regex = /createindex\s+(unique\s+)?(\w+)\s+(\w+)\s+(\w+);?/i;
+  const regex = /createindex\s+(unique\s+)?(\w+)\s+(\w+);?/i;
   const match = commandText.match(regex);
 
   if (!match) {
-    socket.write('Error: Invalid syntax. Use "createindex [unique] index_name table_name column_name"');
+    socket.write(`ERROR: Invalid syntax. Use "createindex [unique] table_name column_name"`);
     return;
   }
 
   const isUnique = !!match[1];
-  const indexName = match[2];
-  const tableName = match[3];
-  const columnName = match[4];
+  const tableName = match[2];
+  const columnName = match[3];
 
   const db = catalog.databases.find(db => db.dataBaseName === currentDatabase);
   const table = db.tables.find(t => t.tableName === tableName);
 
   if (!table) {
-    socket.write('Error: Table ${tableName} does not exist in database ${currentDatabase}');
+    socket.write(`ERROR: Table ${tableName} does not exist in database ${currentDatabase}`);
     return;
   }
 
-  const existingIndex = table.indexFiles.find(index => index.indexName === `${indexName}.ind`);
+  const indexName = `${columnName}.ind`;
+  const existingIndex = table.indexFiles.find(index => index.indexName === indexName);
   if (existingIndex) {
-    socket.write(`Error: Index with the name ${indexName} already exists on table ${tableName}`);
+    socket.write(`ERROR: Index with the name ${indexName} already exists on table ${tableName}`);
     return;
   }
 
-  const collectionName = `${indexName}.ind`;
+
+  const collectionName = `${currentDatabase}_${tableName}_idx_${indexName}`;
   const collection = client.db(currentDatabase).collection(collectionName);
 
   try {
@@ -360,7 +369,7 @@ async function handleCreateIndex(command, socket) {
     await collection.createIndex({[columnName]: 1}, indexOptions);
 
     const indexEntry = {
-      indexName: collectionName,
+      indexName: indexName,
       isUnique: isUnique ? 1 : 0,
       indexAttributes: [columnName]
     };
@@ -368,16 +377,16 @@ async function handleCreateIndex(command, socket) {
     table.indexFiles.push(indexEntry);
     saveCatalog();
 
-    socket.write('Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})');
+    socket.write(`Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})`);
   } catch (error) {
-    socket.write('Error: Could not create index on ${columnName} in table ${tableName}');
+    socket.write(`ERROR: Could not create index on ${columnName} in table ${tableName}`);
   }
 }
 
 function listDatabases(socket) {
   const dbNames = catalog.databases.map(db => db.dataBaseName);
   if (dbNames.length === 0) {
-    socket.write('No databases available.');
+    socket.write(`No databases available.`);
   } else {
     socket.write(`Databases:\n${dbNames.join('\n')}`);
   }
@@ -393,7 +402,7 @@ function listTables(socket) {
       socket.write(`Tables in database ${currentDatabase}:\n${tableNames.join('\n')}`);
     }
   } else {
-    socket.write('Error: No database selected.');
+    socket.write(`ERROR: No database selected.`);
   }
 }
 

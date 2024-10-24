@@ -26,26 +26,27 @@ This will start MongoDB manually, and it will run until you close the terminal o
 ```
 create database Library
 use Library
-create table Authors id int primary notnull, name varchar 255
-create table Books id int primary notnull, title varchar 255, author_id int foreign=Authors.id
+create table Authors id int primary, name varchar 255
+create table Books id int primary, title varchar 255, author_id int foreign=Authors.id
 drop table Books
 drop table Authors
-createindex unique idx_title Books title
-createindex idx_name Authors name
+createindex unique Books title
+createindex Authors name
 drop database Library
 ```
 
 ```
 create database Hospital
 use Hospital
-create table Doctors id int primary notnull, name varchar 255, specialty varchar 255, cnp int
-create table Patients id int primary notnull, name varchar 255, doctor_id int foreign=Doctors.id
-create table Appointments id int primary notnull, patient_id int foreign=Patients.id, doctor_id int foreign=Doctors.id
-drop table Patients
+create table Doctors id int primary, name varchar 255, specialty varchar 255, cnp int
+create table Patients id int primary, name varchar 255, doctor_id int foreign=Doctors.id
+create table Appointments id int primary, patient_id int foreign=Patients.id, doctor_id int foreign=Doctors.id
 drop table Doctors
+drop table Patients
 drop table Appointments
-createindex unique idx_cnp Patients cnp
-createindex idx_specialty Doctors specialty
+createindex unique Patients cnp
+createindex Patients name
+createindex Doctors specialty
 drop database Hospital
 ```
 
@@ -79,5 +80,5 @@ show collections
 
 ```
 db.getCollection('Library_Authors').getIndexes()
-db.getCollection('idx_title.ind').getIndexes()
+db.getCollection('Library_Books_idx_title.ind').getIndexes()
 ```
