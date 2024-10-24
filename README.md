@@ -40,7 +40,7 @@ create database Hospital
 use Hospital
 create table Doctors id int primary, name varchar 255, specialty varchar 255, cnp int
 create table Patients id int primary, name varchar 255, doctor_id int foreign=Doctors.id
-create table Appointments id int primary, patient_id int foreign=Patients.id, doctor_id int foreign=Doctors.id
+create table Appointments patient_id int primary foreign=Patients.id, doctor_id int primary foreign=Doctors.id
 drop table Doctors
 drop table Patients
 drop table Appointments
@@ -81,4 +81,24 @@ show collections
 ```
 db.getCollection('Library_Authors').getIndexes()
 db.getCollection('Library_Books_idx_title.ind').getIndexes()
+```
+
+### Fast example
+```
+create database School
+use School
+create table Teachers id int primary, name varchar 255, specialty varchar 255
+create table Students id int primary, name varchar 255, cnp int, teacher_id int foreign=Teachers.id
+drop table Teachers
+drop table Students
+createindex unique Students cnp
+createindex Students name
+createindex Teachers name
+drop database School
+```
+
+```
+db.getCollection('School_Teachers').getIndexes()
+db.getCollection('School_Students_idx_cnp.ind').getIndexes()
+db.getCollection('School_Students_idx_name.ind').getIndexes()
 ```
