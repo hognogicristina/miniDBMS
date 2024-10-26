@@ -1,5 +1,6 @@
 const net = require('net');
 const readline = require('readline');
+const { processCommand } = require('./commands');
 
 const client = new net.Socket();
 const rl = readline.createInterface({
@@ -32,12 +33,6 @@ client.on('close', () => {
 
 function askCommand() {
   rl.question('Enter command: ', (command) => {
-    if (command === 'exit') {
-      client.write(command);
-      client.end();
-      rl.close();
-    } else {
-      client.write(command);
-    }
+    processCommand(command, client, rl);
   });
 }

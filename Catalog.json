@@ -197,11 +197,6 @@
                     "structure": {
                         "attributes": [
                             {
-                                "attributeName": "id",
-                                "type": "int",
-                                "length": null
-                            },
-                            {
                                 "attributeName": "patient_id",
                                 "type": "int",
                                 "length": null
@@ -215,7 +210,8 @@
                     },
                     "primaryKey": {
                         "pkAttributes": [
-                            "id"
+                            "patient_id",
+                            "doctor_id"
                         ]
                     },
                     "foreignKeys": [
@@ -236,6 +232,167 @@
                             ],
                             "references": {
                                 "refTable": "Doctors",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": []
+                }
+            ]
+        },
+        {
+            "dataBaseName": "School",
+            "tables": [
+                {
+                    "tableName": "Teachers",
+                    "fileName": "School_Teachers",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null
+                            },
+                            {
+                                "attributeName": "name",
+                                "type": "varchar",
+                                "length": 255
+                            },
+                            {
+                                "attributeName": "specialty",
+                                "type": "varchar",
+                                "length": 255
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [],
+                    "indexFiles": [
+                        {
+                            "indexName": "name.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "name"
+                            ]
+                        },
+                        {
+                            "indexName": "specialty.ind",
+                            "isUnique": 1,
+                            "indexAttributes": [
+                                "specialty"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tableName": "Students",
+                    "fileName": "School_Students",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null
+                            },
+                            {
+                                "attributeName": "name",
+                                "type": "varchar",
+                                "length": 255
+                            },
+                            {
+                                "attributeName": "cnp",
+                                "type": "int",
+                                "length": null
+                            },
+                            {
+                                "attributeName": "teacher_id",
+                                "type": "int",
+                                "length": null
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "teacher_id"
+                            ],
+                            "references": {
+                                "refTable": "Teachers",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": [
+                        {
+                            "indexName": "cnp.ind",
+                            "isUnique": 1,
+                            "indexAttributes": [
+                                "cnp"
+                            ]
+                        },
+                        {
+                            "indexName": "name.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "name"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tableName": "School_Teachers",
+                    "fileName": "School_School_Teachers",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "teacher_id",
+                                "type": "int",
+                                "length": null
+                            },
+                            {
+                                "attributeName": "student_id",
+                                "type": "int",
+                                "length": null
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "teacher_id",
+                            "student_id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "teacher_id"
+                            ],
+                            "references": {
+                                "refTable": "Teachers",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        {
+                            "fkAttributes": [
+                                "student_id"
+                            ],
+                            "references": {
+                                "refTable": "Students",
                                 "refAttributes": [
                                     "id"
                                 ]

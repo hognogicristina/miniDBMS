@@ -41,9 +41,9 @@ use Hospital
 create table Doctors id int primary, name varchar 255, specialty varchar 255, cnp int
 create table Patients id int primary, name varchar 255, doctor_id int foreign=Doctors.id
 create table Appointments patient_id int primary foreign=Patients.id, doctor_id int primary foreign=Doctors.id
-drop table Doctors
-drop table Patients
 drop table Appointments
+drop table Patients
+drop table Doctors
 createindex unique Patients cnp
 createindex Patients name
 createindex Doctors specialty
@@ -89,11 +89,14 @@ create database School
 use School
 create table Teachers id int primary, name varchar 255, specialty varchar 255
 create table Students id int primary, name varchar 255, cnp int, teacher_id int foreign=Teachers.id
-drop table Teachers
+create table School_Teachers teacher_id int primary foreign=Teachers.id, student_id int primary foreign=Students.id
+drop table School_Teachers
 drop table Students
+drop table Teachers
 createindex unique Students cnp
 createindex Students name
 createindex Teachers name
+createindex unique Teachers specialty
 drop database School
 ```
 
