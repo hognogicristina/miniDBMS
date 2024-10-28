@@ -14,11 +14,7 @@ function checkDatabaseExists(dbName) {
 
 function checkDatabaseSelection() {
   const currentDatabase = getCurrentDatabase();
-  if (!currentDatabase) {
-    return `ERROR: No database selected`;
-  } else {
-    return catalog.databases.find(db => db.dataBaseName === currentDatabase);
-  }
+  if (!currentDatabase) return `ERROR: No database selected`;
 }
 
 module.exports = {checkDatabase, checkDatabaseExists, checkDatabaseSelection};

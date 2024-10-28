@@ -3,12 +3,14 @@ const {saveCatalog} = require('../../db/catalog');
 const {checkDatabaseSelection} = require('../../utils/databaseValidation');
 const {parseCommand, checkExistingIndex} = require('../../utils/indexValidation');
 const {findTable, checkColumnExists} = require('../../utils/tableValidation');
+const {getCurrentDatabase} = require("../../db/dbState");
 
 async function handleCreateIndex(command, socket) {
-  const currentDatabase = checkDatabaseSelection();
-  if (typeof currentDatabase === 'string') return socket.write(currentDatabase);
-
-  c
+  const dbError = checkDatabaseSelection();
+  if (dbError) {
+    socket.write(dbError);
+    return;
+  }
 
   const commandText = command.join(' ');
   const regex = /createindex\s+(unique\s+)?(\w+)\s+(\w+);?/i;
@@ -39,6 +41,7 @@ async function handleCreateIndex(command, socket) {
     return;
   }
 
+  const currentDatabase = getCurrentDatabase();
   const indexName = `${columnName}.ind`;
   const collectionName = `${currentDatabase}_${tableName}_idx_${indexName}`;
   const collection = client.db(currentDatabase).collection(collectionName);
@@ -58,6 +61,7 @@ async function handleCreateIndex(command, socket) {
 
     socket.write(`Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})`);
   } catch (error) {
+    console.error(error);
     socket.write(`ERROR: Could not create index on ${columnName} in table ${tableName}`);
   }
 }
