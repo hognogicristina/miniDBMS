@@ -5,7 +5,7 @@ let catalog = {};
 if (fs.existsSync(catalogFile)) {
   catalog = JSON.parse(fs.readFileSync(catalogFile));
 } else {
-  catalog = { databases: [] };
+  catalog = {databases: []};
   saveCatalog();
 }
 
@@ -13,4 +13,4 @@ function saveCatalog() {
   fs.writeFileSync(catalogFile, JSON.stringify(catalog, null, 4));
 }
 
-module.exports = { catalog, saveCatalog };
+module.exports = {catalog, saveCatalog};

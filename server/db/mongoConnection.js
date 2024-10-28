@@ -1,4 +1,4 @@
-const { MongoClient } = require('mongodb');
+const {MongoClient} = require('mongodb');
 const config = require('../config');
 
 const client = new MongoClient(config.mongoUri);
@@ -12,4 +12,4 @@ async function connectMongo() {
   }
 }
 
-module.exports = { client, connectMongo };
+module.exports = {client, connectMongo};

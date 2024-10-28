@@ -8,4 +8,4 @@ function getCurrentDatabase() {
   return currentDatabase;
 }
 
-module.exports = { setCurrentDatabase, getCurrentDatabase };
+module.exports = {setCurrentDatabase, getCurrentDatabase};

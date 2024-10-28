@@ -17,4 +17,4 @@ function isValidColumnModifier(modifier) {
   return validModifiers.includes(modifier.toLowerCase());
 }
 
-module.exports = { isValidDataType, isValidColumnModifier };
+module.exports = {isValidDataType, isValidColumnModifier};

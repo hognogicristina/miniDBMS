@@ -1,8 +1,8 @@
-const { handleCreate } = require('./createHandler');
-const { handleDrop } = require('./dropHandler');
-const { listDatabases, listTables } = require('./listHandler');
-const { handleUse } = require('./useHandler');
-const { handleCreateIndex } = require('./indexHandler');
+const {handleCreate} = require('./database/createHandler');
+const {handleDrop} = require('./database/dropHandler');
+const {listDatabases, listTables} = require('./listHandler');
+const {handleUse} = require('./database/useHandler');
+const {handleCreateIndex} = require('./database/indexHandler');
 
 async function handleCommand(command, socket) {
   const cmd = command[0].toLowerCase();
@@ -42,4 +42,4 @@ async function handleCommand(command, socket) {
   }
 }
 
-module.exports = { handleCommand };
+module.exports = {handleCommand};

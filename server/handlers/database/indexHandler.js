@@ -1,20 +1,22 @@
-const { client } = require('../db/mongoConnection');
-const { saveCatalog, catalog } = require('../db/catalog');
-const { getCurrentDatabase } = require('../db/dbState');
+const {client} = require('../../db/mongoConnection');
+const {saveCatalog} = require('../../db/catalog');
+const {checkDatabaseSelection} = require('../../utils/databaseValidation');
+const {parseCommand, checkExistingIndex} = require('../../utils/indexValidation');
+const {findTable, checkColumnExists} = require('../../utils/tableValidation');
 
 async function handleCreateIndex(command, socket) {
-  const currentDatabase = getCurrentDatabase();
-  if (!currentDatabase) {
-    socket.write(`ERROR: No database selected`);
-    return;
-  }
+  const currentDatabase = checkDatabaseSelection();
+  if (typeof currentDatabase === 'string') return socket.write(currentDatabase);
+
+  c
 
   const commandText = command.join(' ');
   const regex = /createindex\s+(unique\s+)?(\w+)\s+(\w+);?/i;
   const match = commandText.match(regex);
 
-  if (!match) {
-    socket.write(`ERROR: Invalid syntax. Use "createindex [unique] table_name column_name"`);
+  const errorMessage = parseCommand(match);
+  if (errorMessage) {
+    socket.write(errorMessage);
     return;
   }
 
@@ -22,22 +24,22 @@ async function handleCreateIndex(command, socket) {
   const tableName = match[2];
   const columnName = match[3];
 
-  const db = catalog.databases.find(db => db.dataBaseName === currentDatabase);
-  const table = db.tables.find(t => t.tableName === tableName);
+  const table = findTable(tableName);
+  if (typeof table === 'string') return socket.write(table);
 
-  if (!table) {
-    socket.write(`ERROR: Table ${tableName} does not exist in database ${currentDatabase}`);
+  const columnError = checkColumnExists(table, tableName, columnName);
+  if (columnError) {
+    socket.write(columnError);
+    return;
+  }
+
+  const indexError = checkExistingIndex(table, columnName);
+  if (indexError) {
+    socket.write(indexError);
     return;
   }
 
   const indexName = `${columnName}.ind`;
-  const existingIndex = table.indexFiles.find(index => index.indexName === indexName);
-  if (existingIndex) {
-    socket.write(`ERROR: Index with the name ${indexName} already exists on table ${tableName}`);
-    return;
-  }
-
-
   const collectionName = `${currentDatabase}_${tableName}_idx_${indexName}`;
   const collection = client.db(currentDatabase).collection(collectionName);
 
@@ -60,4 +62,4 @@ async function handleCreateIndex(command, socket) {
   }
 }
 
-module.exports = { handleCreateIndex };
+module.exports = {handleCreateIndex};

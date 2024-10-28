@@ -1,6 +1,6 @@
 const net = require('net');
-const { handleCommand } = require('./handlers/commandHandler');
-const { connectMongo } = require('./db/mongoConnection');
+const {handleCommand} = require('./handlers/commandHandler');
+const {connectMongo} = require('./db/mongoConnection');
 const config = require('./config');
 
 connectMongo();

@@ -1,5 +1,5 @@
-const { catalog } = require('../db/catalog');
-const { setCurrentDatabase } = require('../db/dbState');
+const {catalog} = require('../../db/catalog');
+const {setCurrentDatabase} = require('../../db/dbState');
 
 function handleUse(command, socket) {
   const dbName = command[1];
@@ -13,4 +13,4 @@ function handleUse(command, socket) {
   }
 }
 
-module.exports = { handleUse };
+module.exports = {handleUse};

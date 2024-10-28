@@ -1,5 +1,5 @@
-const { catalog } = require('../db/catalog');
-const { getCurrentDatabase } = require('../db/dbState');
+const {catalog} = require('../db/catalog');
+const {getCurrentDatabase} = require('../db/dbState');
 
 function listDatabases(socket) {
   const dbNames = catalog.databases.map(db => db.dataBaseName);
@@ -26,4 +26,4 @@ function listTables(socket) {
 }
 
 
-module.exports = { listDatabases, listTables };
+module.exports = {listDatabases, listTables};
