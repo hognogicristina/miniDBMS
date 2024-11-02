@@ -82,4 +82,19 @@ function checkColumnExists(table, tableName, columnName) {
   }
 }
 
-module.exports = {checkTableName, checkTableExists, validateColumnDefinitions, checkForeignKeyReferences, findTable, checkColumnExists};
+async function checkForDuplicatePrimaryKey(collection, primaryKey) {
+  const existing = await collection.findOne({_id: primaryKey});
+  if (existing) {
+    return `ERROR: Primary key ${primaryKey} already exists.`;
+  }
+}
+
+module.exports = {
+  checkTableName,
+  checkTableExists,
+  validateColumnDefinitions,
+  checkForeignKeyReferences,
+  findTable,
+  checkColumnExists,
+  checkForDuplicatePrimaryKey
+};

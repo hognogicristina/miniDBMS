@@ -337,17 +337,17 @@
                     ],
                     "indexFiles": [
                         {
-                            "indexName": "cnp.ind",
-                            "isUnique": 1,
-                            "indexAttributes": [
-                                "cnp"
-                            ]
-                        },
-                        {
                             "indexName": "name.ind",
                             "isUnique": 0,
                             "indexAttributes": [
                                 "name"
+                            ]
+                        },
+                        {
+                            "indexName": "cnp.ind",
+                            "isUnique": 1,
+                            "indexAttributes": [
+                                "cnp"
                             ]
                         }
                     ]
@@ -366,6 +366,11 @@
                                 "attributeName": "student_id",
                                 "type": "int",
                                 "length": null
+                            },
+                            {
+                                "attributeName": "name",
+                                "type": "varchar",
+                                "length": 255
                             }
                         ]
                     },
@@ -393,6 +398,88 @@
                             ],
                             "references": {
                                 "refTable": "Students",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": []
+                },
+                {
+                    "tableName": "Grades",
+                    "fileName": "School_Grades",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "id",
+                                "type": "int",
+                                "length": null
+                            },
+                            {
+                                "attributeName": "grade",
+                                "type": "int",
+                                "length": null
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "id"
+                        ]
+                    },
+                    "foreignKeys": [],
+                    "indexFiles": [
+                        {
+                            "indexName": "grade.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "grade"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tableName": "Students_Grades",
+                    "fileName": "School_Students_Grades",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "student_id",
+                                "type": "int",
+                                "length": null
+                            },
+                            {
+                                "attributeName": "grade_id",
+                                "type": "int",
+                                "length": null
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "student_id",
+                            "grade_id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "student_id"
+                            ],
+                            "references": {
+                                "refTable": "Students",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        {
+                            "fkAttributes": [
+                                "grade_id"
+                            ],
+                            "references": {
+                                "refTable": "Grades",
                                 "refAttributes": [
                                     "id"
                                 ]

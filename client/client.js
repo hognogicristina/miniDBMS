@@ -1,6 +1,6 @@
 const net = require('net');
 const readline = require('readline');
-const { processCommand } = require('./commands');
+const {processCommand} = require('./commands');
 
 const client = new net.Socket();
 const rl = readline.createInterface({

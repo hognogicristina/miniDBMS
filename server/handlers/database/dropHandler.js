@@ -1,7 +1,7 @@
 const {client} = require('../../db/mongoConnection');
 const {saveCatalog, catalog} = require('../../db/catalog');
 const {getCurrentDatabase} = require('../../db/dbState');
-const {checkDatabaseExists} = require('../../utils/databaseValidation');
+const {checkDatabaseExists, checkDatabaseSelection} = require('../../utils/databaseValidation');
 const {checkTableExists, checkForeignKeyReferences} = require('../../utils/tableValidation');
 
 async function handleDrop(command, socket) {
@@ -23,7 +23,9 @@ async function handleDrop(command, socket) {
       const currentDatabase = getCurrentDatabase();
       const tableName = command[2];
 
-      if (!currentDatabase) return socket.write(`ERROR: No database selected`);
+      const dbError = checkDatabaseSelection();
+      if (dbError) return socket.write(dbError);
+
       const db = catalog.databases.find(db => db.dataBaseName === currentDatabase);
 
       const tableIndex = checkTableExists(currentDatabase, tableName);

@@ -1,9 +1,10 @@
 const {client} = require('../../db/mongoConnection');
 const {saveCatalog} = require('../../db/catalog');
 const {checkDatabaseSelection} = require('../../utils/databaseValidation');
-const {parseCommand, checkExistingIndex} = require('../../utils/indexValidation');
+const {checkExistingIndex} = require('../../utils/indexValidation');
 const {findTable, checkColumnExists} = require('../../utils/tableValidation');
 const {getCurrentDatabase} = require("../../db/dbState");
+const {parseCommandIndex} = require('../../utils/commandValidation');
 
 async function handleCreateIndex(command, socket) {
   const dbError = checkDatabaseSelection();
@@ -13,21 +14,26 @@ async function handleCreateIndex(command, socket) {
   }
 
   const commandText = command.join(' ');
-  const regex = /createindex\s+(unique\s+)?(\w+)\s+(\w+);?/i;
+
+  const regex = /create\s+(unique\s+)?index\s+(\w+)\s+on\s+(\w+)\s*\((\w+)\)/i;
   const match = commandText.match(regex);
 
-  const errorMessage = parseCommand(match);
-  if (errorMessage) {
-    socket.write(errorMessage);
-    return;
+  const indexErrorCmd = parseCommandIndex(match);
+  if (indexErrorCmd) {
+    socket.write(indexErrorCmd);
+    return
   }
 
   const isUnique = !!match[1];
-  const tableName = match[2];
-  const columnName = match[3];
+  const indexName = match[2] + '.ind';
+  const tableName = match[3];
+  const columnName = match[4];
 
   const table = findTable(tableName);
-  if (typeof table === 'string') return socket.write(table);
+  if (typeof table === 'string') {
+    socket.write(table);
+    return;
+  }
 
   const columnError = checkColumnExists(table, tableName, columnName);
   if (columnError) {
@@ -35,20 +41,19 @@ async function handleCreateIndex(command, socket) {
     return;
   }
 
-  const indexError = checkExistingIndex(table, columnName);
+  const indexError = checkExistingIndex(table, indexName);
   if (indexError) {
     socket.write(indexError);
     return;
   }
 
   const currentDatabase = getCurrentDatabase();
-  const indexName = `${columnName}.ind`;
   const collectionName = `${currentDatabase}_${tableName}_idx_${indexName}`;
   const collection = client.db(currentDatabase).collection(collectionName);
 
   try {
-    const indexOptions = isUnique ? {unique: true} : {unique: false};
-    await collection.createIndex({[columnName]: 1}, indexOptions);
+    const indexOptions = isUnique ? { unique: true } : { unique: false };
+    await collection.createIndex({ [columnName]: 1 }, indexOptions);
 
     const indexEntry = {
       indexName: indexName,
@@ -61,8 +66,7 @@ async function handleCreateIndex(command, socket) {
 
     socket.write(`Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})`);
   } catch (error) {
-    console.error(error);
-    socket.write(`ERROR: Could not create index on ${columnName} in table ${tableName}`);
+    socket.write(`ERROR: Could not create index ${indexName} on column ${columnName} in table ${tableName}`);
   }
 }
 

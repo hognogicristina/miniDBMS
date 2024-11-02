@@ -1,7 +1,7 @@
 const {client} = require('../../db/mongoConnection');
 const {saveCatalog, catalog} = require('../../db/catalog');
 const {getCurrentDatabase} = require('../../db/dbState');
-const {checkDatabase} = require("../../utils/databaseValidation");
+const {checkDatabase, checkDatabaseSelection} = require("../../utils/databaseValidation");
 const {checkTableName, validateColumnDefinitions} = require("../../utils/tableValidation");
 
 async function handleCreate(command, socket) {
@@ -18,7 +18,8 @@ async function handleCreate(command, socket) {
       socket.write(`Database ${dbName} created`);
     } else if (type === 'table') {
       const currentDatabase = getCurrentDatabase();
-      if (!currentDatabase) return socket.write(`ERROR: No database selected`);
+      const dbError = checkDatabaseSelection();
+      if (dbError) return socket.write(dbError);
 
       const tableName = command[2];
       const columnsData = command.slice(3).join(' ');

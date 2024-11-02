@@ -8,4 +8,4 @@ function processCommand(command, client, rl) {
   }
 }
 
-module.exports = { processCommand };
+module.exports = {processCommand};
