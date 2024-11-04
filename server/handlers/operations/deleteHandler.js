@@ -2,7 +2,7 @@ const {client} = require("../../db/mongoConnection");
 const {getCurrentDatabase} = require("../../db/dbState");
 const {checkDatabaseSelection} = require("../../utils/databaseValidation");
 const {findTable, checkColumnExists} = require("../../utils/tableValidation");
-const {checkDeleteCommand, checkDeleteColumn, validateEmptyVarcharChar, missingPKValueError} = require("../../utils/commandValidation");
+const {checkDeleteCommand, checkDeleteColumn, missingPKValueError} = require("../../utils/commandValidation");
 
 async function handleDelete(command, socket) {
   const currentDatabase = getCurrentDatabase();
@@ -51,12 +51,6 @@ async function handleDelete(command, socket) {
   const missingError = missingPKValueError(primaryKey, conditionMap);
   if (missingError) {
     socket.write(missingError);
-    return;
-  }
-
-  const pkValidationError = validateEmptyVarcharChar(conditionMap, table);
-  if (pkValidationError) {
-    socket.write(pkValidationError);
     return;
   }
 

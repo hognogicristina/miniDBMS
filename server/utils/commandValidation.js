@@ -1,21 +1,15 @@
 function parseCommandIndex(match) {
   if (!match) {
-    return "ERROR: Invalid syntax. Use: create index indexName [unique] on tableName (columnName)";
+    return "ERROR: Invalid syntax. Use: create index indexName [unique] on tableName columnName";
   }
 }
 
 function validateInsertCommand(command, tableName) {
-  const insertRegex = new RegExp(`^insert\\s+into\\s+${tableName}\\s*\\(([^)]+)\\)\\s+values\\s*\\(([^)]+)\\)$`, 'i');
+  const insertRegex = new RegExp(`^insert\\s+into\\s+${tableName}\\s+(\\w+\\s*=\\s*[^,]+(\\s*,\\s*\\w+\\s*=\\s*[^,]+)*)$`, 'i');
   if (!insertRegex.test(command.join(" "))) {
-    return `ERROR: Invalid syntax. Use: "insert into ${tableName} (column1, column2, ...) values (value1, 'value2', ...)"`;
+    return `ERROR: Invalid syntax. Use: "insert into ${tableName} column1 = 'value1', column2 = value2, ..."`;
   }
   return null;
-}
-
-function validateInsertLength(columns, values) {
-  if (columns.length !== values.length) {
-    return `ERROR: Number of columns and values must match`;
-  }
 }
 
 function checkInsertCommand(command, tableColumns, fields) {
@@ -30,14 +24,14 @@ function checkInsertCommand(command, tableColumns, fields) {
   }
 }
 
-function validateEmptyVarcharChar(fields, table) {
+function validateEmptyVarcharChar(commandText, table) {
   for (const attr of table.structure.attributes) {
     const columnName = attr.attributeName;
     const columnType = attr.type.toLowerCase();
-    const fieldValue = fields[columnName];
 
-    if (fieldValue !== undefined) {
-      if ((columnType === "varchar" || columnType === "char") && !/^'.*'$/.test(fieldValue)) {
+    if (columnType === "varchar" || columnType === "char") {
+      const regex = new RegExp(`${columnName}\\s*=\\s*'[^']*'`, 'i');
+      if (!regex.test(commandText)) {
         return `ERROR: Column ${columnName} of type ${columnType.toUpperCase()} must be enclosed in single quotes.`;
       }
     }
@@ -67,7 +61,6 @@ function missingPKValueError(primaryKey, conditionMap) {
 module.exports = {
   parseCommandIndex,
   validateInsertCommand,
-  validateInsertLength,
   validateEmptyVarcharChar,
   checkInsertCommand,
   checkDeleteCommand,

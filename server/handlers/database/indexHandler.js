@@ -15,13 +15,14 @@ async function handleCreateIndex(command, socket) {
 
   const commandText = command.join(' ');
 
-  const regex = /create\s+(unique\s+)?index\s+(\w+)\s+on\s+(\w+)\s*\((\w+)\)/i;
+  // Updated regex to remove parentheses around the column name
+  const regex = /create\s+(unique\s+)?index\s+(\w+)\s+on\s+(\w+)\s+(\w+)/i;
   const match = commandText.match(regex);
 
   const indexErrorCmd = parseCommandIndex(match);
   if (indexErrorCmd) {
     socket.write(indexErrorCmd);
-    return
+    return;
   }
 
   const isUnique = !!match[1];
@@ -52,8 +53,8 @@ async function handleCreateIndex(command, socket) {
   const collection = client.db(currentDatabase).collection(collectionName);
 
   try {
-    const indexOptions = isUnique ? { unique: true } : { unique: false };
-    await collection.createIndex({ [columnName]: 1 }, indexOptions);
+    const indexOptions = isUnique ? {unique: true} : {unique: false};
+    await collection.createIndex({[columnName]: 1}, indexOptions);
 
     const indexEntry = {
       indexName: indexName,

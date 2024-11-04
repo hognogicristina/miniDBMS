@@ -3,7 +3,7 @@ const {getCurrentDatabase} = require("../../db/dbState");
 const {checkDatabaseSelection} = require("../../utils/databaseValidation");
 const {findTable, checkForDuplicatePrimaryKey} = require("../../utils/tableValidation");
 const {checkInsertCommand} = require("../../utils/commandValidation");
-const {validateInsertCommand, validateInsertLength, validateEmptyVarcharChar} = require("../../utils/commandValidation");
+const {validateEmptyVarcharChar, validateInsertCommand} = require("../../utils/commandValidation");
 
 async function handleInsert(command, socket) {
   const currentDatabase = getCurrentDatabase();
@@ -24,33 +24,27 @@ async function handleInsert(command, socket) {
   }
 
   const commandText = command.join(" ");
-  const match = commandText.match(/insert\s+into\s+\w+\s*\(([^)]+)\)\s+values\s*\(([^)]+)\)/i);
-
-  const columns = match[1].split(",").map(col => col.trim());
-  const values = match[2].split(",").map(val => val.trim());
-
-  const insertErrorLength = validateInsertLength(columns, values);
-  if (insertErrorLength) {
-    socket.write(insertErrorLength);
+  const match = commandText.match(/insert\s+into\s+\w+\s+((\w+\s*=\s*[^,]+)(\s*,\s*\w+\s*=\s*[^,]+)*)/i);
+  if (!match) {
+    socket.write("ERROR: Invalid syntax. Ensure correct format for inserting values.");
     return;
   }
 
+  const fieldPairs = match[1].split(",").map(pair => pair.trim());
   const fields = {};
-  columns.forEach((col, index) => {
-    fields[col] = values[index];
+
+  fieldPairs.forEach(pair => {
+    const [col, val] = pair.split("=").map(s => s.trim());
+    fields[col] = val.replace(/^'|'$/g, "");
   });
 
-  const emptyValueError = validateEmptyVarcharChar(fields, table);
+  const tableColumns = table.structure.attributes.map(attr => attr.attributeName);
+  const emptyValueError = validateEmptyVarcharChar(commandText, table);
   if (emptyValueError) {
     socket.write(emptyValueError);
     return;
   }
 
-  for (const key in fields) {
-    fields[key] = fields[key].replace(/^'|'$/g, "");
-  }
-
-  const tableColumns = table.structure.attributes.map(attr => attr.attributeName);
   const insertError = checkInsertCommand(command, tableColumns, fields);
   if (insertError) {
     socket.write(insertError);
@@ -86,6 +80,5 @@ async function handleInsert(command, socket) {
     socket.write("ERROR: Insert operation failed");
   }
 }
-
 
 module.exports = {handleInsert};

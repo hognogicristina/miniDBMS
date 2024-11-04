@@ -35,8 +35,8 @@ create table Books id int primary, title varchar 255, author_id int foreign=Auth
 drop table Books
 drop table Authors
 
-create unique index title on Books (title)
-create index name on Authors (name)
+create unique index title on Books title
+create index name on Authors name
 ```
 
 ```
@@ -52,9 +52,9 @@ drop table Appointments
 drop table Patients
 drop table Doctors
 
-create unique index cnp on Patients (cnp)
-create index name on Patients (name)
-create index specialty on Doctors (specialty)
+create unique index cnp on Patients cnp
+create index name on Patients name
+create index specialty on Doctors specialty
 ```
 
 ### Use Mongo with CLI
@@ -109,24 +109,24 @@ drop table School_Teachers
 drop table Students
 drop table Teachers
 
-create index name on Students (name)
-create unique index cnp on Students (cnp)
-create index name on Teachers (name)
-create unique index specialty on Teachers (specialty)
-create index grade on Grades (grade)
+create index name on Students name
+create unique index cnp on Students cnp
+create index name on Teachers name
+create unique index specialty on Teachers specialty
+create index grade on Grades grade
 ```
 
 ```
-insert into Teachers (id, name, specialty) values (1, 'John', 'Math')
-insert into Students (id, name, cnp, teacher_id) values (1, 'Alice', 123, 1)
-insert into School_Teachers (teacher_id, student_id, name) values (1, 1, 'UBB')
-insert into Grades (id, grade) values (1, 10)
-insert into Students_Grades (student_id, grade_id) values (1, 1)
+insert into Teachers id = 1, name = 'John', specialty = 'Math'
+insert into Students id = 1, name = 'Alice', cnp = 123, teacher_id = 1
+insert into School_Teachers teacher_id = 1, student_id = 1, name = 'UBB'
+insert into Grades id = 1, grade = 10
+insert into Students_Grades student_id = 1, grade_id = 1
 ```
 
 ```
 delete from Teachers where id = 1
-delete from School_Teachers where teacher_id = 2 and student_id = 1
+delete from School_Teachers where teacher_id = 1 and student_id = 1
 ```
 
 ```
