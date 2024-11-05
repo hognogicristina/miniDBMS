@@ -14,8 +14,6 @@ async function handleCreateIndex(command, socket) {
   }
 
   const commandText = command.join(' ');
-
-  // Updated regex to remove parentheses around the column name
   const regex = /create\s+(unique\s+)?index\s+(\w+)\s+on\s+(\w+)\s+(\w+)/i;
   const match = commandText.match(regex);
 

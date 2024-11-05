@@ -2,7 +2,13 @@ const {client} = require("../../db/mongoConnection");
 const {getCurrentDatabase} = require("../../db/dbState");
 const {checkDatabaseSelection} = require("../../utils/databaseValidation");
 const {findTable, checkColumnExists} = require("../../utils/tableValidation");
-const {checkDeleteCommand, checkDeleteColumn, missingPKValueError} = require("../../utils/commandValidation");
+const {
+  checkDeleteSyntax,
+  checkDeleteCommand,
+  checkDeleteColumn,
+  checkForDuplicateColumnsDelete,
+  missingPKValueError
+} = require("../../utils/commandValidation");
 
 async function handleDelete(command, socket) {
   const currentDatabase = getCurrentDatabase();
@@ -19,17 +25,28 @@ async function handleDelete(command, socket) {
     return;
   }
 
+  const deleteSyntaxError = checkDeleteSyntax(command);
+  if (deleteSyntaxError) {
+    socket.write(deleteSyntaxError);
+    return;
+  }
+
   const deleteCommandError = checkDeleteCommand(command);
   if (deleteCommandError) {
     socket.write(deleteCommandError);
     return;
   }
 
-  const primaryKey = table.primaryKey.pkAttributes;
-
   const conditionString = command.slice(4).join(" ");
   const conditions = conditionString.split("and").map(cond => cond.trim());
 
+  const duplicateColumnsError = checkForDuplicateColumnsDelete(conditions);
+  if (duplicateColumnsError) {
+    socket.write(duplicateColumnsError);
+    return;
+  }
+
+  const primaryKey = table.primaryKey.pkAttributes;
   const conditionMap = {};
   for (let condition of conditions) {
     const [col, val] = condition.split("=").map(s => s.trim());

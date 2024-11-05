@@ -1,14 +1,52 @@
 function parseCommandIndex(match) {
   if (!match) {
-    return "ERROR: Invalid syntax. Use: create index indexName [unique] on tableName columnName";
+    return `ERROR: Invalid syntax. Use: "create index indexName [unique] on tableName columnName"`;
   }
 }
 
-function validateInsertCommand(command, tableName) {
-  const insertRegex = new RegExp(`^insert\\s+into\\s+${tableName}\\s+(\\w+\\s*=\\s*[^,]+(\\s*,\\s*\\w+\\s*=\\s*[^,]+)*)$`, 'i');
-  if (!insertRegex.test(command.join(" "))) {
-    return `ERROR: Invalid syntax. Use: "insert into ${tableName} column1 = 'value1', column2 = value2, ..."`;
+function validateInsertCommand(match) {
+  if (!match) {
+    return `ERROR: Invalid syntax. Use: "insert into tableName column1 = value1, column2 = 'value2', ..."`;
   }
+  return null;
+}
+
+function checkForDuplicateColumns(columns) {
+  const columnSet = new Set();
+  const duplicates = [];
+
+  columns.forEach(col => {
+    if (columnSet.has(col)) {
+      duplicates.push(col);
+    } else {
+      columnSet.add(col);
+    }
+  });
+
+  if (duplicates.length > 0) {
+    return `ERROR: Duplicate column(s) found: ${duplicates.join(", ")}`;
+  }
+
+  return null;
+}
+
+function checkForDuplicateColumnsDelete(conditions) {
+  const columns = conditions.map(cond => cond.split("=")[0].trim());
+  const duplicates = [];
+  const columnSet = new Set();
+
+  columns.forEach(col => {
+    if (columnSet.has(col)) {
+      duplicates.push(col);
+    } else {
+      columnSet.add(col);
+    }
+  });
+
+  if (duplicates.length > 0) {
+    return `ERROR: Duplicate column found: ${duplicates.join(", ")}`;
+  }
+
   return null;
 }
 
@@ -18,9 +56,9 @@ function checkInsertCommand(command, tableColumns, fields) {
   const extraColumns = providedColumns.filter(col => !tableColumns.includes(col));
 
   if (missingColumns.length > 0) {
-    return `ERROR: Missing columns: ${missingColumns.join(", ")}`;
+    return `ERROR: Missing column(s): ${missingColumns.join(", ")}`;
   } else if (extraColumns.length > 0) {
-    return `ERROR: Extra columns: ${extraColumns.join(", ")}`;
+    return `ERROR: Extra column(s): ${extraColumns.join(", ")}`;
   }
 }
 
@@ -34,6 +72,17 @@ function validateEmptyVarcharChar(commandText, table) {
       if (!regex.test(commandText)) {
         return `ERROR: Column ${columnName} of type ${columnType.toUpperCase()} must be enclosed in single quotes.`;
       }
+    }
+  }
+  return null;
+}
+
+function checkDeleteSyntax(command) {
+  const conditionString = command.slice(4).join(" ");
+  const conditions = conditionString.split("and").map(cond => cond.trim());
+  for (let condition of conditions) {
+    if (!condition.includes("=")) {
+      return `ERROR: Invalid syntax. Use: "delete from tableName where columnName = value"`;
     }
   }
   return null;
@@ -61,8 +110,11 @@ function missingPKValueError(primaryKey, conditionMap) {
 module.exports = {
   parseCommandIndex,
   validateInsertCommand,
-  validateEmptyVarcharChar,
+  checkForDuplicateColumns,
+  checkForDuplicateColumnsDelete,
   checkInsertCommand,
+  validateEmptyVarcharChar,
+  checkDeleteSyntax,
   checkDeleteCommand,
   checkDeleteColumn,
   missingPKValueError

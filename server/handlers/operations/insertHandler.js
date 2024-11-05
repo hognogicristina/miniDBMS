@@ -2,8 +2,12 @@ const {client} = require('../../db/mongoConnection');
 const {getCurrentDatabase} = require("../../db/dbState");
 const {checkDatabaseSelection} = require("../../utils/databaseValidation");
 const {findTable, checkForDuplicatePrimaryKey} = require("../../utils/tableValidation");
-const {checkInsertCommand} = require("../../utils/commandValidation");
-const {validateEmptyVarcharChar, validateInsertCommand} = require("../../utils/commandValidation");
+const {
+  validateEmptyVarcharChar,
+  validateInsertCommand,
+  checkInsertCommand,
+  checkForDuplicateColumns
+} = require("../../utils/commandValidation");
 
 async function handleInsert(command, socket) {
   const currentDatabase = getCurrentDatabase();
@@ -17,37 +21,40 @@ async function handleInsert(command, socket) {
   const table = findTable(tableName);
   if (typeof table === 'string') return socket.write(table);
 
-  const insertErrorCommand = validateInsertCommand(command, tableName);
+  const commandText = command.join(" ");
+  const match = commandText.match(/insert\s+into\s+\w+\s+((\w+\s*=\s*[^,]+)(\s*,\s*\w+\s*=\s*[^,]+)*)/i);
+  const insertErrorCommand = validateInsertCommand(match, tableName);
   if (insertErrorCommand) {
     socket.write(insertErrorCommand);
     return;
   }
 
-  const commandText = command.join(" ");
-  const match = commandText.match(/insert\s+into\s+\w+\s+((\w+\s*=\s*[^,]+)(\s*,\s*\w+\s*=\s*[^,]+)*)/i);
-  if (!match) {
-    socket.write("ERROR: Invalid syntax. Ensure correct format for inserting values.");
-    return;
-  }
-
   const fieldPairs = match[1].split(",").map(pair => pair.trim());
   const fields = {};
+  const columns = [];
 
   fieldPairs.forEach(pair => {
     const [col, val] = pair.split("=").map(s => s.trim());
+    columns.push(col);
     fields[col] = val.replace(/^'|'$/g, "");
   });
 
-  const tableColumns = table.structure.attributes.map(attr => attr.attributeName);
-  const emptyValueError = validateEmptyVarcharChar(commandText, table);
-  if (emptyValueError) {
-    socket.write(emptyValueError);
+  const duplicateColumnError = checkForDuplicateColumns(columns);
+  if (duplicateColumnError) {
+    socket.write(duplicateColumnError);
     return;
   }
 
+  const tableColumns = table.structure.attributes.map(attr => attr.attributeName);
   const insertError = checkInsertCommand(command, tableColumns, fields);
   if (insertError) {
     socket.write(insertError);
+    return;
+  }
+
+  const emptyValueError = validateEmptyVarcharChar(commandText, table);
+  if (emptyValueError) {
+    socket.write(emptyValueError);
     return;
   }
 

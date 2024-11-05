@@ -127,6 +127,7 @@ insert into Students_Grades student_id = 1, grade_id = 1
 ```
 delete from Teachers where id = 1
 delete from School_Teachers where teacher_id = 1 and student_id = 1
+delete from Students_Grades where student_id = 1 and grade_id = 1
 ```
 
 ```

@@ -1,10 +1,10 @@
-const { handleCreate } = require('./database/createHandler');
-const { handleDrop } = require('./database/dropHandler');
-const { listDatabases, listTables } = require('./listHandler');
-const { handleUse } = require('./database/useHandler');
-const { handleCreateIndex } = require('./database/indexHandler');
-const { handleInsert } = require('./operations/insertHandler');
-const { handleDelete } = require('./operations/deleteHandler');
+const {handleCreate} = require('./database/createHandler');
+const {handleDrop} = require('./database/dropHandler');
+const {listDatabases, listTables} = require('./listHandler');
+const {handleUse} = require('./database/useHandler');
+const {handleCreateIndex} = require('./database/indexHandler');
+const {handleInsert} = require('./operations/insertHandler');
+const {handleDelete} = require('./operations/deleteHandler');
 
 async function handleCommand(command, socket) {
   const cmd = command[0].toLowerCase();
@@ -38,10 +38,18 @@ async function handleCommand(command, socket) {
       }
       break;
     case 'insert':
-      await handleInsert(command, socket);
+      if (command[1].toLowerCase() === 'into') {
+        await handleInsert(command, socket);
+      } else {
+        socket.write(`ERROR: Invalid syntax. Use: "insert into tableName column1 = value1, column2 = 'value2', ..."`);
+      }
       break;
     case 'delete':
-      await handleDelete(command, socket);
+      if (command[1].toLowerCase() === 'from') {
+        await handleDelete(command, socket);
+      } else {
+        socket.write(`ERROR: Invalid syntax. Use: "delete from tableName where columnName = value"`);
+      }
       break;
     default:
       socket.write('ERROR: Invalid command');
@@ -49,4 +57,4 @@ async function handleCommand(command, socket) {
   }
 }
 
-module.exports = { handleCommand };
+module.exports = {handleCommand};
