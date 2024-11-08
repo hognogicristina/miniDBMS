@@ -126,8 +126,18 @@ insert into Students_Grades student_id = 1, grade_id = 1
 
 ```
 delete from Teachers where id = 1
+delete from Students where id = 1
 delete from School_Teachers where teacher_id = 1 and student_id = 1
+delete from Grades where id = 1
 delete from Students_Grades where student_id = 1 and grade_id = 1
+```
+
+```
+db.School_Teachers.find()
+db.School_Students.find()
+db.School_School_Teachers.find()
+db.School_Grades.find()
+db.School_Students_Grades.find()
 ```
 
 ```
@@ -137,12 +147,5 @@ db.getCollection('School_Teachers_idx_specialty.ind').getIndexes()
 db.getCollection('School_Teachers_idx_name.ind').getIndexes()
 db.getCollection('School_Students_idx_cnp.ind').getIndexes()
 db.getCollection('School_Students_idx_name.ind').getIndexes()
-```
-
-```
-db.School_Teachers.find()
-db.School_Students.find()
-db.School_School_Teachers.find()
-db.School_Grades.find()
-db.School_Students_Grades.find()
+db.getCollection('School_Grades_idx_grade.ind').getIndexes()
 ```
