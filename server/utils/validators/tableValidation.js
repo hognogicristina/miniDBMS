@@ -1,6 +1,6 @@
-const {catalog} = require("../db/catalog");
+const {catalog} = require("../../db/catalog");
 const {isValidDataType, isValidColumnModifier} = require("./dataValidation");
-const {getCurrentDatabase} = require("../db/dbState");
+const {getCurrentDatabase} = require("../../db/dbState");
 
 function checkTableName(currentDatabase, tableName) {
   if (!tableName) return `ERROR: Table name required`;
@@ -38,7 +38,9 @@ function validateColumnDefinitions(dbEntry, columnDefinitions) {
           const [refTable, refColumn] = part.split('=')[1].split('.');
           const referencedTable = dbEntry.tables.find(t => t.tableName === refTable);
           if (!referencedTable) return `ERROR: Referenced table ${refTable} does not exist`;
-          if (!referencedTable.structure.attributes.some(attr => attr.attributeName === refColumn)) return `ERROR: Referenced column ${refColumn} does not exist in table ${refTable}`;
+          if (!referencedTable.structure.attributes.some(attr => attr.attributeName === refColumn)) {
+            return `ERROR: Referenced column ${refColumn} does not exist in table ${refTable}`;
+          }
           foreignKeys.push({fkAttributes: [columnName], references: {refTable, refAttributes: [refColumn]}});
         } else if (!isValidColumnModifier(part)) {
           return `ERROR: Invalid column modifier "${part}" in column ${columnName}`;
@@ -53,14 +55,9 @@ function validateColumnDefinitions(dbEntry, columnDefinitions) {
   }
 
   if (columns.length === 0) return `ERROR: At least one column is required`;
-  if (primaryKey.length === 0) return `ERROR: Primary key is required`;
+  if (primaryKey.length === 0) primaryKey.push('_id');
 
   return {columns, primaryKey, foreignKeys};
-}
-
-function checkForeignKeyReferences(db, tableName) {
-  const foreignKeyCheck = db.tables.some(t => t.foreignKeys.some(fk => fk.references.refTable === tableName));
-  return foreignKeyCheck ? `ERROR: Cannot drop table ${tableName}, it is referenced by other tables` : null;
 }
 
 function findTable(tableName) {
@@ -82,19 +79,10 @@ function checkColumnExists(table, tableName, columnName) {
   }
 }
 
-async function checkForDuplicatePrimaryKey(collection, primaryKey) {
-  const existing = await collection.findOne({_id: primaryKey});
-  if (existing) {
-    return `ERROR: Primary key ${primaryKey} already exists.`;
-  }
-}
-
 module.exports = {
   checkTableName,
   checkTableExists,
   validateColumnDefinitions,
-  checkForeignKeyReferences,
   findTable,
-  checkColumnExists,
-  checkForDuplicatePrimaryKey
+  checkColumnExists
 };

@@ -1,88 +1,72 @@
 const {client} = require("../../db/mongoConnection");
 const {getCurrentDatabase} = require("../../db/dbState");
-const {checkDatabaseSelection} = require("../../utils/databaseValidation");
-const {findTable, checkColumnExists} = require("../../utils/tableValidation");
+const {checkDatabaseSelection} = require("../../utils/validators/databaseValidation");
+const {findTable, checkColumnExists} = require("../../utils/validators/tableValidation");
 const {
   checkDeleteSyntax,
   checkDeleteCommand,
   checkDeleteColumn,
   checkForDuplicateColumnsDelete,
   missingPKValueError
-} = require("../../utils/commandValidation");
+} = require("../../utils/validators/commandValidation");
+const {checkForeignKeyReferences} = require("../../utils/validators/foreignKeyValidation");
+const {deleteForeignKeyEntries} = require("../../utils/helpers/deleteIndex");
 
 async function handleDelete(command, socket) {
   const currentDatabase = getCurrentDatabase();
   const dbError = checkDatabaseSelection();
-  if (dbError) {
-    socket.write(dbError);
-    return;
-  }
+  if (dbError) return socket.write(dbError);
 
   const tableName = command[2];
   const table = findTable(tableName);
-  if (typeof table === "string") {
-    socket.write(table);
-    return;
-  }
+  if (typeof table === 'string') return socket.write(table);
 
   const deleteSyntaxError = checkDeleteSyntax(command);
-  if (deleteSyntaxError) {
-    socket.write(deleteSyntaxError);
-    return;
-  }
+  if (deleteSyntaxError) return socket.write(deleteSyntaxError);
 
   const deleteCommandError = checkDeleteCommand(command);
-  if (deleteCommandError) {
-    socket.write(deleteCommandError);
-    return;
-  }
+  if (deleteCommandError) return socket.write(deleteCommandError);
 
   const conditionString = command.slice(4).join(" ");
   const conditions = conditionString.split("and").map(cond => cond.trim());
 
   const duplicateColumnsError = checkForDuplicateColumnsDelete(conditions);
-  if (duplicateColumnsError) {
-    socket.write(duplicateColumnsError);
-    return;
-  }
+  if (duplicateColumnsError) return socket.write(duplicateColumnsError);
 
   const primaryKey = table.primaryKey.pkAttributes;
   const conditionMap = {};
+
   for (let condition of conditions) {
     const [col, val] = condition.split("=").map(s => s.trim());
     conditionMap[col] = val.replace(/^'|'$/g, "");
 
     const columnExistsError = checkColumnExists(table, tableName, col);
-    if (columnExistsError) {
-      socket.write(columnExistsError);
-      return;
-    }
+    if (columnExistsError) return socket.write(columnExistsError);
 
     const deleteColumnError = checkDeleteColumn(primaryKey, col);
-    if (deleteColumnError) {
-      socket.write(deleteColumnError);
-      return;
-    }
+    if (deleteColumnError) return socket.write(deleteColumnError);
   }
 
   const missingError = missingPKValueError(primaryKey, conditionMap);
-  if (missingError) {
-    socket.write(missingError);
+  if (missingError) return socket.write(missingError);
+
+  const pkValue = primaryKey.map(key => conditionMap[key]).join("$");
+  const collection = client.db(currentDatabase).collection(table.fileName);
+
+  const fkReferenceError = await checkForeignKeyReferences(table, pkValue, currentDatabase, client);
+  if (fkReferenceError) {
+    socket.write(fkReferenceError);
     return;
   }
 
-  const pkValue = primaryKey.map(key => conditionMap[key].replace(/^'|'$/g, "")).join("#");
-
   try {
-    const collection = client.db(currentDatabase).collection(table.fileName);
-    const filter = {_id: pkValue};
-
-    const deleteResult = await collection.deleteOne(filter);
-    if (deleteResult.deletedCount === 1) {
-      socket.write(`Deleted from table ${tableName}`);
-    } else {
-      socket.write("ERROR: No data found with the given primary key");
+    await deleteForeignKeyEntries(table, pkValue, currentDatabase, client);
+    const result = await collection.deleteOne({_id: pkValue});
+    if (result.deletedCount === 0) {
+      socket.write(`ERROR: Record with ${pkValue} not found in table ${tableName}`);
+      return;
     }
+    socket.write(`Deleted from table ${tableName}`);
   } catch (error) {
     socket.write("ERROR: Delete operation failed");
   }

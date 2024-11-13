@@ -1,21 +1,21 @@
 const {client} = require('../../db/mongoConnection');
 const {getCurrentDatabase} = require("../../db/dbState");
-const {checkDatabaseSelection} = require("../../utils/databaseValidation");
-const {findTable, checkForDuplicatePrimaryKey} = require("../../utils/tableValidation");
+const {checkDatabaseSelection} = require("../../utils/validators/databaseValidation");
+const {findTable} = require("../../utils/validators/tableValidation");
 const {
-  validateEmptyVarcharChar,
   validateInsertCommand,
   checkInsertCommand,
-  checkForDuplicateColumns
-} = require("../../utils/commandValidation");
+  checkForDuplicateColumns,
+  validateEmptyVarcharChar
+} = require("../../utils/validators/commandValidation");
+const {validateDuplicatePK, checkExistingUniqueIndex} = require("../../utils/validators/indexValidation");
+const {updateIndexes, updateIndexFK} = require("../../utils/helpers/updateIndexes");
+const {checkExistingFK} = require("../../utils/validators/foreignKeyValidation");
 
 async function handleInsert(command, socket) {
   const currentDatabase = getCurrentDatabase();
   const dbError = checkDatabaseSelection();
-  if (dbError) {
-    socket.write(dbError);
-    return;
-  }
+  if (dbError) return socket.write(dbError);
 
   const tableName = command[2];
   const table = findTable(tableName);
@@ -24,10 +24,7 @@ async function handleInsert(command, socket) {
   const commandText = command.join(" ");
   const match = commandText.match(/insert\s+into\s+\w+\s+((\w+\s*=\s*[^,]+)(\s*,\s*\w+\s*=\s*[^,]+)*)/i);
   const insertErrorCommand = validateInsertCommand(match, tableName);
-  if (insertErrorCommand) {
-    socket.write(insertErrorCommand);
-    return;
-  }
+  if (insertErrorCommand) return socket.write(insertErrorCommand);
 
   const fieldPairs = match[1].split(",").map(pair => pair.trim());
   const fields = {};
@@ -40,47 +37,36 @@ async function handleInsert(command, socket) {
   });
 
   const duplicateColumnError = checkForDuplicateColumns(columns);
-  if (duplicateColumnError) {
-    socket.write(duplicateColumnError);
-    return;
-  }
+  if (duplicateColumnError) return socket.write(duplicateColumnError);
 
   const tableColumns = table.structure.attributes.map(attr => attr.attributeName);
   const insertError = checkInsertCommand(command, tableColumns, fields);
-  if (insertError) {
-    socket.write(insertError);
-    return;
-  }
+  if (insertError) return socket.write(insertError);
 
   const emptyValueError = validateEmptyVarcharChar(commandText, table);
-  if (emptyValueError) {
-    socket.write(emptyValueError);
-    return;
-  }
+  if (emptyValueError) return socket.write(emptyValueError);
 
   const primaryKey = table.primaryKey.pkAttributes;
-  const pkValue = primaryKey.map(key => fields[key]).join("#");
-  const nonPKColumns = tableColumns.filter(col => !primaryKey.includes(col));
-  const value = nonPKColumns.map(col => fields[col]).join("#");
+  const pkValue = primaryKey.map(key => fields[key]).join("$");
 
   const collection = client.db(currentDatabase).collection(table.fileName);
-  const duplicateError = await checkForDuplicatePrimaryKey(collection, pkValue);
-  if (duplicateError) {
-    socket.write(duplicateError);
-    return;
-  }
+  const duplicatePKError = await validateDuplicatePK(collection, tableName, pkValue);
+  if (duplicatePKError) return socket.write(duplicatePKError);
+
+  const fkError = await checkExistingFK(table, fields, currentDatabase, client);
+  if (fkError) return socket.write(fkError);
+
+  const nonPKColumns = tableColumns.filter(col => !primaryKey.includes(col));
+  const value = nonPKColumns.map(col => fields[col]).join("$");
+  const document = {_id: pkValue, value};
+
+  const indexError = await checkExistingUniqueIndex(table, fields, currentDatabase, client);
+  if (indexError) return socket.write(indexError);
 
   try {
-    const document = {_id: pkValue};
-    if (value) {
-      document.value = value;
-    }
-
-    await collection.updateOne(
-      {_id: pkValue},
-      {$set: document},
-      {upsert: true}
-    );
+    await collection.insertOne(document);
+    await updateIndexes(table, fields, currentDatabase, client);
+    await updateIndexFK(table, fields, currentDatabase, client);
 
     socket.write(`Inserted into table ${tableName}`);
   } catch (error) {

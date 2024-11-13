@@ -1,12 +1,13 @@
 const {client} = require('../../db/mongoConnection');
 const {saveCatalog} = require('../../db/catalog');
-const {checkDatabaseSelection} = require('../../utils/databaseValidation');
-const {checkExistingIndex} = require('../../utils/indexValidation');
-const {findTable, checkColumnExists} = require('../../utils/tableValidation');
+const {checkDatabaseSelection} = require('../../utils/validators/databaseValidation');
+const {checkExistingIndex} = require('../../utils/validators/indexValidation');
+const {findTable, checkColumnExists} = require('../../utils/validators/tableValidation');
 const {getCurrentDatabase} = require("../../db/dbState");
-const {parseCommandIndex} = require('../../utils/commandValidation');
+const {parseCommandIndex} = require('../../utils/validators/commandValidation');
 
 async function handleCreateIndex(command, socket) {
+  // Check if a database is selected
   const dbError = checkDatabaseSelection();
   if (dbError) {
     socket.write(dbError);
@@ -14,7 +15,8 @@ async function handleCreateIndex(command, socket) {
   }
 
   const commandText = command.join(' ');
-  const regex = /create\s+(unique\s+)?index\s+(\w+)\s+on\s+(\w+)\s+(\w+)/i;
+  // Updated regex to handle multiple columns
+  const regex = /create\s+(unique\s+)?index\s+(\w+)\s+on\s+(\w+)\s+([\w,\s]+)/i;
   const match = commandText.match(regex);
 
   const indexErrorCmd = parseCommandIndex(match);
@@ -26,46 +28,52 @@ async function handleCreateIndex(command, socket) {
   const isUnique = !!match[1];
   const indexName = match[2] + '.ind';
   const tableName = match[3];
-  const columnName = match[4];
+  const columns = match[4].split(',').map(col => col.trim());
 
+  // Find the specified table
   const table = findTable(tableName);
   if (typeof table === 'string') {
     socket.write(table);
     return;
   }
 
-  const columnError = checkColumnExists(table, tableName, columnName);
-  if (columnError) {
-    socket.write(columnError);
-    return;
+  // Check if all specified columns exist in the table
+  for (const column of columns) {
+    const columnError = checkColumnExists(table, tableName, column);
+    if (columnError) {
+      socket.write(columnError);
+      return;
+    }
   }
 
+  // Check if the index already exists
   const indexError = checkExistingIndex(table, indexName);
   if (indexError) {
     socket.write(indexError);
     return;
   }
 
+  // Get the current database and collection name
   const currentDatabase = getCurrentDatabase();
   const collectionName = `${currentDatabase}_${tableName}_idx_${indexName}`;
-  const collection = client.db(currentDatabase).collection(collectionName);
 
   try {
-    const indexOptions = isUnique ? {unique: true} : {unique: false};
-    await collection.createIndex({[columnName]: 1}, indexOptions);
+    await client.db(currentDatabase).createCollection(collectionName);
 
     const indexEntry = {
       indexName: indexName,
       isUnique: isUnique ? 1 : 0,
-      indexAttributes: [columnName]
+      indexAttributes: columns
     };
 
     table.indexFiles.push(indexEntry);
     saveCatalog();
 
-    socket.write(`Index ${indexName} created on column ${columnName} in table ${tableName} (Unique: ${isUnique})`);
+    socket.write(
+      `Index ${indexName} created on columns ${columns.join(', ')} in table ${tableName} (Unique: ${isUnique})`
+    );
   } catch (error) {
-    socket.write(`ERROR: Could not create index ${indexName} on column ${columnName} in table ${tableName}`);
+    socket.write(`ERROR: Could not create index ${indexName} on columns ${columns.join(', ')} in table ${tableName}`);
   }
 }
 

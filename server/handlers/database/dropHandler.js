@@ -1,8 +1,10 @@
 const {client} = require('../../db/mongoConnection');
 const {saveCatalog, catalog} = require('../../db/catalog');
 const {getCurrentDatabase} = require('../../db/dbState');
-const {checkDatabaseExists, checkDatabaseSelection} = require('../../utils/databaseValidation');
-const {checkTableExists, checkForeignKeyReferences} = require('../../utils/tableValidation');
+const {checkDatabaseExists, checkDatabaseSelection} = require('../../utils/validators/databaseValidation');
+const {checkTableExists} = require('../../utils/validators/tableValidation');
+const {checkUseOfExistingFK} = require('../../utils/validators/foreignKeyValidation');
+const {dropTable} = require('../../utils/helpers/deleteIndex');
 
 async function handleDrop(command, socket) {
   const type = command[1].toLowerCase();
@@ -27,26 +29,15 @@ async function handleDrop(command, socket) {
       if (dbError) return socket.write(dbError);
 
       const db = catalog.databases.find(db => db.dataBaseName === currentDatabase);
-
       const tableIndex = checkTableExists(currentDatabase, tableName);
       if (typeof tableIndex === 'string') return socket.write(tableIndex);
 
-      const foreignKeyError = checkForeignKeyReferences(db, tableName);
-      if (foreignKeyError) return socket.write(foreignKeyError);
-
       const table = db.tables[tableIndex];
-
-      for (const indexFile of table.indexFiles) {
-        const collectionName = `${currentDatabase}_${tableName}_idx_${indexFile.indexName}`;
-        try {
-          const collection = client.db(currentDatabase).collection(collectionName);
-          await collection.drop();
-        } catch (error) {
-          return socket.write(`ERROR: Could not drop index collection ${collectionName}`);
-        }
-      }
+      const fkError = await checkUseOfExistingFK(table, currentDatabase, client);
+      if (fkError) return socket.write(fkError);
 
       try {
+        await dropTable(table, currentDatabase);
         const tableCollection = client.db(currentDatabase).collection(table.fileName);
         await tableCollection.drop();
       } catch (error) {

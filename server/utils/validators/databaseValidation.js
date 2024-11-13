@@ -1,5 +1,5 @@
-const {catalog} = require("../db/catalog");
-const {getCurrentDatabase} = require("../db/dbState");
+const {catalog} = require("../../db/catalog");
+const {getCurrentDatabase} = require("../../db/dbState");
 
 function checkDatabase(dbName) {
   if (!dbName) return `ERROR: Database name required`;

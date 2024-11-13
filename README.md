@@ -1,4 +1,14 @@
-# miniDBMS
+# miniDBMS Setup Guide
+
+## Install MongoDB on macOS
+
+### Install Homebrew (if not installed)
+
+Run the following command to install Homebrew if you don't have it installed:
+
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
 
 ### Start MongoDB:
 
@@ -22,40 +32,54 @@ mongod --config /usr/local/etc/mongod.conf --fork
 
 This will start MongoDB manually, and it will run until you close the terminal or stop it.
 
-### Database creation examples
+<details>
 
-```
-create database Library
-use Library
-drop database Library
+<summary>Database Example Commands</summary>
 
-create table Authors id int primary, name varchar 255
-create table Books id int primary, title varchar 255, author_id int foreign=Authors.id
-
-drop table Books
-drop table Authors
-
-create unique index title on Books title
-create index name on Authors name
-```
+### Database creation
 
 ```
 create database Hospital
 use Hospital
 drop database Hospital
+```
 
+### Table creation and deletion
+
+```
 create table Doctors id int primary, name varchar 255, specialty varchar 255, cnp int
-create table Patients id int primary, name varchar 255, doctor_id int foreign=Doctors.id
+create table Patients id int primary, name varchar 255, cnp int, doctor_id int foreign=Doctors.id
 create table Appointments patient_id int primary foreign=Patients.id, doctor_id int primary foreign=Doctors.id
+```
 
+```
 drop table Appointments
 drop table Patients
 drop table Doctors
+```
 
-create unique index cnp on Patients cnp
-create index name on Patients name
+### Index creation
+
+```
+create unique index cnp_name on Patients cnp, name
 create index specialty on Doctors specialty
 ```
+
+### Insert data and delete data
+
+```
+insert into Doctors id = 1, name = 'John', specialty = 'Cardiology', cnp = 1234567890123
+insert into Patients id = 1, name = 'Alice', cnp = 1234567890123, doctor_id = 1
+insert into Appointments patient_id = 1, doctor_id = 1
+```
+
+```
+delete from Appointments where patient_id = 1 and doctor_id = 1
+delete from Patients where id = 1
+delete from Doctors where id = 1
+```
+
+</details>
 
 ### Use Mongo with CLI
 
@@ -74,7 +98,7 @@ show dbs
 3. Use a database
 
 ```
-use Library
+use Hospital
 ```
 
 4. Show database's collections
@@ -83,69 +107,78 @@ use Library
 show collections
 ```
 
-5Show index/table collection of indexes
+<details>
+<summary>5. Show entries in a collection</summary>
 
 ```
-db.getCollection('Library_Authors').getIndexes()
-db.getCollection('Library_Books_idx_title.ind').getIndexes()
+db.Hospital_Doctors.find()
+db.Hospital_Patients.find()
+db.Hospital_Patients_fk_Doctors_doctor_id.find()
+db.Hospital_Patients_idx_cnp_name.find()
+db.Hospital_Doctors_idx_specialty.find()
+
+db.Hospital_Appointments.find()
+db.Hospital_Appointments_fk_Patients_patient_id.find()
+db.Hospital_Appointments_fk_Doctors_doctor_id.find()
 ```
 
-### Fast example
+</details>
+
+<details>
+<summary>6. Show index/table collection of indexes</summary>
 
 ```
-create database School
-use School
-drop database School
+db.getCollection('Hospital_Doctors').getIndexes()
+db.getCollection('Hospital_Patients').getIndexes()
+db.getCollection('Hospital_Patients_fk_Doctors_doctor_id').getIndexes()
+db.getCollection('Hospital_Patients_idx_cnp_name').getIndexes()
 
-create table Teachers id int primary, name varchar 255, specialty varchar 255
-create table Students id int primary, name varchar 255, cnp int, teacher_id int foreign=Teachers.id
-create table School_Teachers teacher_id int primary foreign=Teachers.id, student_id int primary foreign=Students.id, name varchar 255
-create table Grades id int primary, grade int
-create table Students_Grades student_id int primary foreign=Students.id, grade_id int primary foreign=Grades.id
-
-drop table Students_Grades
-drop table Grades
-drop table School_Teachers
-drop table Students
-drop table Teachers
-
-create index name on Students name
-create unique index cnp on Students cnp
-create index name on Teachers name
-create unique index specialty on Teachers specialty
-create index grade on Grades grade
+db.getCollection('Hospital_Appointments').getIndexes()
+db.getCollection('Hospital_Appointments_fk_Patients_patient_id').getIndexes()
+db.getCollection('Hospital_Appointments_fk_Doctors_doctor_id').getIndexes()
 ```
 
-```
-insert into Teachers id = 1, name = 'John', specialty = 'Math'
-insert into Students id = 1, name = 'Alice', cnp = 123, teacher_id = 1
-insert into School_Teachers teacher_id = 1, student_id = 1, name = 'UBB'
-insert into Grades id = 1, grade = 10
-insert into Students_Grades student_id = 1, grade_id = 1
-```
+</details>
+
+## Setting Up a Node.js Project with Separate Server and Client Folders
+
+### Create Project Structure
+
+Install server dependencies:
 
 ```
-delete from Teachers where id = 1
-delete from Students where id = 1
-delete from School_Teachers where teacher_id = 1 and student_id = 1
-delete from Grades where id = 1
-delete from Students_Grades where student_id = 1 and grade_id = 1
+npm init -y
 ```
 
-```
-db.School_Teachers.find()
-db.School_Students.find()
-db.School_School_Teachers.find()
-db.School_Grades.find()
-db.School_Students_Grades.find()
-```
+Create 2 terminals and run the following commands in each:
 
 ```
-db.getCollection('School_Teachers').getIndexes()
-db.getCollection('School_Students').getIndexes()
-db.getCollection('School_Teachers_idx_specialty.ind').getIndexes()
-db.getCollection('School_Teachers_idx_name.ind').getIndexes()
-db.getCollection('School_Students_idx_cnp.ind').getIndexes()
-db.getCollection('School_Students_idx_name.ind').getIndexes()
-db.getCollection('School_Grades_idx_grade.ind').getIndexes()
+node server/server.js
+node client/client.js
 ```
+
+## For Windows Users
+
+### Install MongoDB on Windows
+
+1. Download MongoDB from the official site: [MongoDB Download Center](https://www.mongodb.com/try/download/community).
+2. Run the installer and follow the installation instructions.
+
+### Start MongoDB as a service:
+
+```
+net start MongoDB
+```
+
+If you want to run MongoDB manually, open a Command Prompt as Administrator and run:
+
+```
+mongod --dbpath "C:\path\to\your\db\folder"
+```
+
+### Setting Up a Node.js Project with Server and Client on Windows
+
+1. Install [Node.js](https://nodejs.org/en).
+2. Open Command Prompt or PowerShell and follow the same steps as on macOS to create the project structure and run the server/client.
+
+For more database examples, check the [databases.txt](https://github.com/hognogicristina/miniDBMS/blob/main/databases.txt) file.
