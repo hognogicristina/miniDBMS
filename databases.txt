@@ -106,6 +106,7 @@ insert into Grades GDate = '2022.02.02', StudID = 345, DiscID = 'DBImplem', Grad
 insert into Grades GDate = '2022.02.20', StudID = 345, DiscID = 'DBImplem', Grade = 10
 
 delete from Grades where GDate = '2022.02.02' and StudID = 345 and DiscID = 'DBImplem'
+delete from Grades where GDate = '2022.02.20' and StudID = 345 and DiscID = 'DBImplem'
 delete from Students where id = 345
 
 db.School_Students.find()

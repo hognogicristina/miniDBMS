@@ -459,55 +459,6 @@
                         }
                     ],
                     "indexFiles": []
-                },
-                {
-                    "tableName": "Employees_Projects",
-                    "fileName": "Company_Employees_Projects",
-                    "structure": {
-                        "attributes": [
-                            {
-                                "attributeName": "employee_id",
-                                "type": "int",
-                                "length": null
-                            },
-                            {
-                                "attributeName": "project_id",
-                                "type": "int",
-                                "length": null
-                            }
-                        ]
-                    },
-                    "primaryKey": {
-                        "pkAttributes": [
-                            "employee_id",
-                            "project_id"
-                        ]
-                    },
-                    "foreignKeys": [
-                        {
-                            "fkAttributes": [
-                                "employee_id"
-                            ],
-                            "references": {
-                                "refTable": "Employees",
-                                "refAttributes": [
-                                    "id"
-                                ]
-                            }
-                        },
-                        {
-                            "fkAttributes": [
-                                "project_id"
-                            ],
-                            "references": {
-                                "refTable": "Projects",
-                                "refAttributes": [
-                                    "id"
-                                ]
-                            }
-                        }
-                    ],
-                    "indexFiles": []
                 }
             ]
         },
