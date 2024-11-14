@@ -30,12 +30,7 @@ async function handleCreate(command, socket) {
       const columnValidation = validateColumnDefinitions(dbEntry, columnsData);
       if (typeof columnValidation === 'string') return socket.write(columnValidation);
 
-      const {
-        columns,
-        primaryKey,
-        foreignKeys = []
-      } = columnValidation;
-
+      const {columns, primaryKey, foreignKeys = [], uniqueColumns = []} = columnValidation;
       const fileName = `${currentDatabase}_${tableName}`;
       const db = client.db(currentDatabase);
       await db.createCollection(fileName);
@@ -51,8 +46,24 @@ async function handleCreate(command, socket) {
 
       for (const fk of foreignKeys) {
         const refTable = fk.references.refTable;
-        const fkIndexName = `${fileName}_fk_${refTable}_${fk.fkAttributes.join('_')}.ind`;
+        const fkName = `${fk.fkAttributes.join('_')}.ind`;
+        const fkIndexName = `${fileName}_fk_${refTable}_${fkName}`;
         await db.createCollection(fkIndexName);
+
+        newTable.indexFiles.push({
+          indexName: fkName,
+          isUnique: 0,
+          indexAttributes: fk.fkAttributes,
+        });
+      }
+
+      for (const uniqueColumn of uniqueColumns) {
+        await db.createCollection(`${fileName}_idx_${uniqueColumn}.ind`);
+        newTable.indexFiles.push({
+          indexName: `${uniqueColumn}.ind`,
+          isUnique: 1,
+          indexAttributes: [uniqueColumn]
+        });
       }
 
       dbEntry.tables.push(newTable);

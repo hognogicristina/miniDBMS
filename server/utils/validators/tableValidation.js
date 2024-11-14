@@ -1,5 +1,5 @@
 const {catalog} = require("../../db/catalog");
-const {isValidDataType, isValidColumnModifier} = require("./dataValidation");
+const {isValidDataType, isValidColumnModifier, isUnique} = require("./dataValidation");
 const {getCurrentDatabase} = require("../../db/dbState");
 
 function checkTableName(currentDatabase, tableName) {
@@ -21,7 +21,11 @@ function validateColumnDefinitions(dbEntry, columnDefinitions) {
   const columns = [];
   const primaryKey = [];
   const foreignKeys = [];
+  const uniqueColumns = [];
   const columnNames = new Set();
+
+  const primaryCount = columnDefinitions.split(',').filter(def => def.includes('primary')).length;
+  const hasMultiplePrimaryKeys = primaryCount > 1;
 
   for (const definition of columnDefinitions.split(',')) {
     const parts = definition.trim().split(' ');
@@ -30,10 +34,18 @@ function validateColumnDefinitions(dbEntry, columnDefinitions) {
     const columnLength = parts[2] ? parseInt(parts[2], 10) : null;
 
     if (columnNames.has(columnName)) return `ERROR: Duplicate column name ${columnName}`;
+    columnNames.add(columnName);
+
     if (!isValidDataType(columnType, columnLength)) return `ERROR: Invalid data type for column ${columnName}`;
+    let isUniqueColumn = isUnique(parts);
+
+    let isPrimary = parts.includes('primary');
+    if (hasMultiplePrimaryKeys && isPrimary) {
+      isUniqueColumn = false;
+    }
 
     for (const part of parts) {
-      if (part !== columnName && part !== columnType && !Number.isInteger(columnLength)) {
+      if (part !== columnName && part !== columnType && !Number.isInteger(columnLength) && part !== 'unique') {
         if (part.startsWith('foreign=')) {
           const [refTable, refColumn] = part.split('=')[1].split('.');
           const referencedTable = dbEntry.tables.find(t => t.tableName === refTable);
@@ -48,16 +60,31 @@ function validateColumnDefinitions(dbEntry, columnDefinitions) {
       }
     }
 
-    columnNames.add(columnName);
-    const column = {attributeName: columnName, type: columnType, length: columnLength};
-    if (parts.includes('primary')) primaryKey.push(columnName);
+    if (isPrimary) {
+      primaryKey.push(columnName);
+      if (!hasMultiplePrimaryKeys) {
+        isUniqueColumn = true;
+      }
+    }
+
+    const column = {
+      attributeName: columnName,
+      type: columnType,
+      length: columnLength,
+      isUnique: isUniqueColumn,
+    };
+
+    if (isUniqueColumn && !isPrimary) {
+      uniqueColumns.push(columnName);
+    }
+
     columns.push(column);
   }
 
   if (columns.length === 0) return `ERROR: At least one column is required`;
   if (primaryKey.length === 0) primaryKey.push('_id');
 
-  return {columns, primaryKey, foreignKeys};
+  return {columns, primaryKey, foreignKeys, uniqueColumns};
 }
 
 function findTable(tableName) {

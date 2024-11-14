@@ -3,12 +3,11 @@ use Library
 drop database Library
 
 create table Authors id int primary, name varchar 255
-create table Books id int primary, title varchar 255, author_id int foreign=Authors.id
+create table Books id int primary, title varchar 255 unique, author_id int foreign=Authors.id
 
 drop table Books
 drop table Authors
 
-create unique index title on Books title
 create index name on Authors name
 
 ----------------------------------------------------------------------------------------------------------------------------------
@@ -17,7 +16,7 @@ create database Hospital
 use Hospital
 drop database Hospital
 
-create table Doctors id int primary, name varchar 255, specialty varchar 255, cnp int
+create table Doctors id int primary, name varchar 255, cnp int unique, specialty varchar 255
 create table Patients id int primary, name varchar 255, cnp int, doctor_id int foreign=Doctors.id
 create table Appointments patient_id int primary foreign=Patients.id, doctor_id int primary foreign=Doctors.id
 
@@ -26,7 +25,6 @@ drop table Patients
 drop table Doctors
 
 create unique index cnp_name on Patients cnp, name
-create index specialty on Doctors specialty
 
 ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -34,7 +32,7 @@ create database Company
 use Company
 drop database Company
 
-create table Departments id int primary, name varchar 255, location varchar 255
+create table Departments id int primary, name varchar 255, location varchar 255 unique
 create table Employees id int primary, name varchar 255, age int, salary int, department_id int foreign=Departments.id
 create table Employees_Departments employee_id int primary foreign=Employees.id, department_id int primary foreign=Departments.id, type varchar 255, company varchar 255
 create table Projects id int primary, name varchar 255, department_id int foreign=Departments.id
@@ -46,14 +44,17 @@ drop table Employees_Departments
 drop table Employees
 drop table Departments
 
-create index name on Employees name
 create index name_age on Employees name, age
 create unique index age_salary on Employees age, salary
 create index type_company on Employees_Departments type, company
 
 insert into Departments id = 1, name = 'HR', location = 'Cluj'
+insert into Departments id = 2, name = 'HR', location = 'Bistrita'
 insert into Employees id = 1, name = 'Alice', age = 1, salary = 1000, department_id = 1
+insert into Employees id = 2, name = 'Alice', age = 1, salary = 3000, department_id = 1
 insert into Employees_Departments employee_id = 1, department_id = 1, type = 'Full-time', company = 'Company'
+insert into Employees_Departments employee_id = 1, department_id = 2, type = 'Full-time', company = 'Company'
+insert into Employees_Departments employee_id = 2, department_id = 2, type = 'Full-time', company = 'Company'
 insert into Projects id = 1, name = 'Project1', department_id = 1
 insert into Employees_Projects employee_id = 1, project_id = 1
 
@@ -93,7 +94,7 @@ create database School
 use School
 drop database School
 
-create table Students id int primary, name varchar 255
+create table Students id int primary, name varchar 255 unique
 create table Grades GDate varchar 255 primary, StudID int primary foreign=Students.id, DiscID varchar 255 primary, Grade int
 
 drop table Grades
@@ -102,11 +103,11 @@ drop table Students
 create index GradesIndStudDisc on Grades StudID, DiscID
 
 insert into Students id = 345, name = 'Alice'
+insert into Students id = 346, name = 'Alina'
 insert into Grades GDate = '2022.02.02', StudID = 345, DiscID = 'DBImplem', Grade = 8
 insert into Grades GDate = '2022.02.20', StudID = 345, DiscID = 'DBImplem', Grade = 10
 
 delete from Grades where GDate = '2022.02.02' and StudID = 345 and DiscID = 'DBImplem'
-delete from Grades where GDate = '2022.02.20' and StudID = 345 and DiscID = 'DBImplem'
 delete from Students where id = 345
 
 db.School_Students.find()

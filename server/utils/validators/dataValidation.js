@@ -17,4 +17,10 @@ function isValidColumnModifier(modifier) {
   return validModifiers.includes(modifier.toLowerCase());
 }
 
-module.exports = {isValidDataType, isValidColumnModifier};
+function isUnique(parts) {
+  const uniqueIndex = parts.indexOf('unique');
+  if (uniqueIndex === -1) return false;
+  return uniqueIndex === parts.length - 1;
+}
+
+module.exports = {isValidDataType, isValidColumnModifier, isUnique};

@@ -11,12 +11,14 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -44,17 +46,20 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "title",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "author_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -78,6 +83,13 @@
                     ],
                     "indexFiles": [
                         {
+                            "indexName": "author_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "author_id"
+                            ]
+                        },
+                        {
                             "indexName": "title.ind",
                             "isUnique": 1,
                             "indexAttributes": [
@@ -99,22 +111,26 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
-                            },
-                            {
-                                "attributeName": "specialty",
-                                "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "cnp",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
+                            },
+                            {
+                                "attributeName": "specialty",
+                                "type": "varchar",
+                                "length": 255,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -126,10 +142,10 @@
                     "foreignKeys": [],
                     "indexFiles": [
                         {
-                            "indexName": "specialty.ind",
-                            "isUnique": 0,
+                            "indexName": "cnp.ind",
+                            "isUnique": 1,
                             "indexAttributes": [
-                                "specialty"
+                                "cnp"
                             ]
                         }
                     ]
@@ -142,22 +158,26 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "cnp",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "doctor_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -181,6 +201,13 @@
                     ],
                     "indexFiles": [
                         {
+                            "indexName": "doctor_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "doctor_id"
+                            ]
+                        },
+                        {
                             "indexName": "cnp_name.ind",
                             "isUnique": 1,
                             "indexAttributes": [
@@ -198,12 +225,14 @@
                             {
                                 "attributeName": "patient_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "doctor_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -237,7 +266,22 @@
                             }
                         }
                     ],
-                    "indexFiles": []
+                    "indexFiles": [
+                        {
+                            "indexName": "patient_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "patient_id"
+                            ]
+                        },
+                        {
+                            "indexName": "doctor_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "doctor_id"
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -252,17 +296,20 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "location",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": true
                             }
                         ]
                     },
@@ -272,7 +319,15 @@
                         ]
                     },
                     "foreignKeys": [],
-                    "indexFiles": []
+                    "indexFiles": [
+                        {
+                            "indexName": "location.ind",
+                            "isUnique": 1,
+                            "indexAttributes": [
+                                "location"
+                            ]
+                        }
+                    ]
                 },
                 {
                     "tableName": "Employees",
@@ -282,27 +337,32 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "age",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "salary",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "department_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -326,10 +386,10 @@
                     ],
                     "indexFiles": [
                         {
-                            "indexName": "name.ind",
+                            "indexName": "department_id.ind",
                             "isUnique": 0,
                             "indexAttributes": [
-                                "name"
+                                "department_id"
                             ]
                         },
                         {
@@ -358,22 +418,26 @@
                             {
                                 "attributeName": "employee_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "department_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "type",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "company",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -409,6 +473,20 @@
                     ],
                     "indexFiles": [
                         {
+                            "indexName": "employee_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "employee_id"
+                            ]
+                        },
+                        {
+                            "indexName": "department_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "department_id"
+                            ]
+                        },
+                        {
                             "indexName": "type_company.ind",
                             "isUnique": 0,
                             "indexAttributes": [
@@ -426,17 +504,20 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "department_id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -458,7 +539,81 @@
                             }
                         }
                     ],
-                    "indexFiles": []
+                    "indexFiles": [
+                        {
+                            "indexName": "department_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "department_id"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "tableName": "Employees_Projects",
+                    "fileName": "Company_Employees_Projects",
+                    "structure": {
+                        "attributes": [
+                            {
+                                "attributeName": "employee_id",
+                                "type": "int",
+                                "length": null,
+                                "isUnique": false
+                            },
+                            {
+                                "attributeName": "project_id",
+                                "type": "int",
+                                "length": null,
+                                "isUnique": false
+                            }
+                        ]
+                    },
+                    "primaryKey": {
+                        "pkAttributes": [
+                            "employee_id",
+                            "project_id"
+                        ]
+                    },
+                    "foreignKeys": [
+                        {
+                            "fkAttributes": [
+                                "employee_id"
+                            ],
+                            "references": {
+                                "refTable": "Employees",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        {
+                            "fkAttributes": [
+                                "project_id"
+                            ],
+                            "references": {
+                                "refTable": "Projects",
+                                "refAttributes": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    ],
+                    "indexFiles": [
+                        {
+                            "indexName": "employee_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "employee_id"
+                            ]
+                        },
+                        {
+                            "indexName": "project_id.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "project_id"
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -473,12 +628,14 @@
                             {
                                 "attributeName": "id",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": true
                             },
                             {
                                 "attributeName": "name",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": true
                             }
                         ]
                     },
@@ -488,7 +645,15 @@
                         ]
                     },
                     "foreignKeys": [],
-                    "indexFiles": []
+                    "indexFiles": [
+                        {
+                            "indexName": "name.ind",
+                            "isUnique": 1,
+                            "indexAttributes": [
+                                "name"
+                            ]
+                        }
+                    ]
                 },
                 {
                     "tableName": "Grades",
@@ -498,22 +663,26 @@
                             {
                                 "attributeName": "GDate",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "StudID",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "DiscID",
                                 "type": "varchar",
-                                "length": 255
+                                "length": 255,
+                                "isUnique": false
                             },
                             {
                                 "attributeName": "Grade",
                                 "type": "int",
-                                "length": null
+                                "length": null,
+                                "isUnique": false
                             }
                         ]
                     },
@@ -538,6 +707,13 @@
                         }
                     ],
                     "indexFiles": [
+                        {
+                            "indexName": "StudID.ind",
+                            "isUnique": 0,
+                            "indexAttributes": [
+                                "StudID"
+                            ]
+                        },
                         {
                             "indexName": "GradesIndStudDisc.ind",
                             "isUnique": 0,
