@@ -1,0 +1,2 @@
+For School table Grades:
+"2024-01-12", "345", "PFU6KnfS", "10"
