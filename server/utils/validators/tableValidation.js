@@ -106,10 +106,29 @@ function checkColumnExists(table, tableName, columnName) {
   }
 }
 
+function validateWhereColumns(whereConditions, table) {
+  const tableColumns = table.structure.attributes.map(attr => attr.attributeName);
+  const invalidColumns = [];
+
+  if (whereConditions.length === 0) return null;
+  for (const condition of whereConditions) {
+    if (!tableColumns.includes(condition.attribute)) {
+      invalidColumns.push(condition.attribute);
+    }
+  }
+
+  if (invalidColumns.length > 0) {
+    return `ERROR: The following columns do not exist in table "${table.tableName}": ${invalidColumns.join(', ')}`;
+  }
+
+  return null;
+}
+
 module.exports = {
   checkTableName,
   checkTableExists,
   validateColumnDefinitions,
   findTable,
-  checkColumnExists
+  checkColumnExists,
+  validateWhereColumns
 };

@@ -12,17 +12,17 @@ async function updateIndexes(table, fields, currentDatabase, client) {
       .join("$");
 
     if (index.isUnique) {
-      await collection.insertOne({ _id: indexKey, value: pkValue });
+      await collection.insertOne({_id: indexKey, value: pkValue});
     } else {
-      const existingEntry = await collection.findOne({ _id: indexKey });
+      const existingEntry = await collection.findOne({_id: indexKey});
 
       if (!existingEntry) {
-        await collection.insertOne({ _id: indexKey, value: pkValue });
+        await collection.insertOne({_id: indexKey, value: pkValue});
       } else {
         const updatedValue = `${existingEntry.value}#${pkValue}`;
         await collection.updateOne(
-          { _id: indexKey },
-          { $set: { value: updatedValue } }
+          {_id: indexKey},
+          {$set: {value: updatedValue}}
         );
       }
     }

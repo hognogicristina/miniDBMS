@@ -107,6 +107,57 @@ function missingPKValueError(primaryKey, conditionMap) {
   }
 }
 
+function parseSelectCommand(command) {
+  const commandText = command.join(" ");
+  const selectMatch = commandText.match(/select\s+(distinct\s+)?(.+?)\s+from\s+(.+?)(\s+where\s+(.+))?$/i);
+
+  if (!selectMatch) return "ERROR: Invalid SELECT command";
+
+  const distinct = Boolean(selectMatch[1]);
+  const columnsText = selectMatch[2].trim();
+  const columns = columnsText === '*' ? ['*'] : columnsText.split(',').map(col => col.trim());
+  const tables = selectMatch[3].trim().split(',').map(tbl => tbl.trim());
+  const whereClause = selectMatch[5] || "";
+
+  const whereConditions = whereClause
+    .split("and")
+    .map(cond => cond.trim())
+    .filter(cond => cond)
+    .map(cond => {
+      let operator, attribute, value;
+
+      if (cond.toLowerCase().includes('like')) {
+        [attribute, value] = cond.split(/like/i).map(part => part.trim());
+        operator = 'LIKE';
+      } else {
+        const match = cond.match(/(.+?)(>=|<=|>|<|=)(.+)/);
+        if (match) {
+          attribute = match[1].trim();
+          operator = match[2];
+          value = match[3].trim();
+        } else {
+          return `ERROR: Invalid condition: "${cond}". Expected a valid operator (=, >, <, >=, <=)`;
+        }
+      }
+
+      if (!attribute || value === undefined) {
+        return `ERROR: Invalid condition: "${cond}". A column and value must be specified.`;
+      }
+
+      const isValueQuoted = value.startsWith("'") && value.endsWith("'");
+      if (isValueQuoted) {
+        value = value.slice(1, -1);
+      }
+
+      return {attribute, operator, value, isValueQuoted};
+    });
+
+  const invalidCondition = whereConditions.find(cond => typeof cond === 'string');
+  if (invalidCondition) return invalidCondition;
+
+  return {columns, tables, whereConditions, distinct};
+}
+
 module.exports = {
   parseCommandIndex,
   validateInsertCommand,
@@ -117,5 +168,6 @@ module.exports = {
   checkDeleteSyntax,
   checkDeleteCommand,
   checkDeleteColumn,
-  missingPKValueError
+  missingPKValueError,
+  parseSelectCommand
 };

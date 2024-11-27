@@ -94,21 +94,55 @@ create database School
 use School
 drop database School
 
-create table Students id int primary, name varchar 255 unique
-create table Grades GDate varchar 255 primary, StudID int primary foreign=Students.id, DiscID varchar 255 primary, Grade int
+create table Students StudID int primary, GroupID int, Name varchar 255, Tel varchar 255 unique, email varchar 255 unique, mark int
+create table Students2 StudID int primary, GroupID int, Name varchar 255, Tel varchar 255, email varchar 255, mark int
+create table Students3 StudID int primary, GroupID int, Name varchar 255, Tel varchar 255 unique, email varchar 255 unique, mark int
+create table Grades GDate date primary, StudID int primary foreign=Students.StudID, DiscID varchar 255 primary, Grade int
 
 drop table Grades
 drop table Students
+drop table Students2
+drop table Students3
 
+create index GroupID on Students GroupID
+create index mark on Students mark
+create index GroupID on Students2 GroupID
+create index GroupIDMark on Students3 GroupID, mark
 create index GradesIndStudDisc on Grades StudID, DiscID
 
-insert into Students id = 345, name = 'Alice'
-insert into Students id = 346, name = 'Alina'
+insert into Students StudID = 345, GroupID = 243, Name = 'Alice', Tel = '123456', email = 'alice@gmail.com', mark = 10
 insert into Grades GDate = '2022.02.02', StudID = 345, DiscID = 'DBImplem', Grade = 8
 insert into Grades GDate = '2022.02.20', StudID = 345, DiscID = 'DBImplem', Grade = 10
 
 delete from Grades where GDate = '2022.02.02' and StudID = 345 and DiscID = 'DBImplem'
-delete from Students where id = 345
+delete from Students where StudID = 345
+
+a)
+select * from Students where GroupID = 243 and mark = 10
+select distinct Name from Students where GroupID = 243 and mark = 10
+select StudID, mark from Students where GroupID = 243 and mark = 10
+select * from Students where Name like 'H%'
+select * from Students where StudID = 345
+
+b)
+select * from Students2 where GroupID = 243 and mark = 10 and email like '%hotmail%'
+select * from Students where email like 'X2%'
+select * from Students where email like '%yahoo%'
+select * from Students where email like '%gmail%' and mark = 10
+
+c)
+select distinct mark from Students where mark > 9
+select distinct Name from Students where mark > 9
+select StudID, mark from Students where mark < 5
+
+d)
+select * from Students3 where GroupID = 243 and Name = 'Dolly'
+select * from Students3 where mark = 1 and Name = 'Dolly'
+select * from Students3 where GroupID = 243 and Name = 'Bernard'
+select * from Students3 where GroupID = 243 and mark = 1
+select * from Students3 where GroupID = 243 and mark > 8
+select Name from Students3 where GroupID = 243
+select * from Grades where StudID = 345 and DiscID like 'PF%'
 
 db.School_Students.find()
 db.School_Grades.find()
@@ -119,5 +153,10 @@ db.getCollection('School_Students').getIndexes()
 db.getCollection('School_Grades').getIndexes()
 db.getCollection('School_Grades_fk_Students_StudID.ind').getIndexes()
 db.getCollection('School_Grades_idx_StudID_DiscID.ind').getIndexes()
+
+db.School_Students.countDocuments()
+db.School_Grades.countDocuments()
+db.School_Grades_fk_Students_StudID.ind.countDocuments()
+db.School_Grades_idx_StudID_DiscID.ind.countDocuments()
 
 -----------------------------------------------------------------------------------------------------------------------------------

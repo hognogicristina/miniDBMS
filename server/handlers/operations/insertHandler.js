@@ -57,7 +57,7 @@ async function handleInsert(command, socket) {
   if (fkError) return socket.write(fkError);
 
   const nonPKColumns = tableColumns.filter(col => !primaryKey.includes(col));
-  const value = nonPKColumns.map(col => fields[col]).join("$");
+  const value = nonPKColumns.map(col => fields[col]).join("#");
   const document = {_id: pkValue, value};
 
   const indexError = await checkExistingUniqueIndex(table, fields, currentDatabase, client);
