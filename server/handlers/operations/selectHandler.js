@@ -53,7 +53,6 @@ async function handleSelect(command, socket) {
     writeResultsToFile(projectedResults, selectedColumns, currentDatabase, tablesData[0].tableName);
     socket.write('check select.txt');
   } catch (error) {
-    console.log(error);
     socket.write("ERROR: Failed to execute SELECT command");
   }
 }
