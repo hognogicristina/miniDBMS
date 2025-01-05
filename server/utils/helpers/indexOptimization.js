@@ -51,7 +51,6 @@ async function indexConditionQuery(indexCond, indexCollection, query) {
     let regex;
     if (value.startsWith('%') && value.endsWith('%')) {
       regex = new RegExp(value.slice(1, -1), 'i');
-      console.log('Regex:', regex);
     } else if (value.startsWith('%')) {
       regex = new RegExp(`${value.slice(1)}$`, 'i');
     } else if (value.endsWith('%')) {
@@ -68,16 +67,13 @@ async function fetchDocuments(table, whereConditions, currentDatabase) {
   const db = client.db(currentDatabase);
   const collection = db.collection(table.fileName);
   whereConditions = Array.isArray(whereConditions) ? whereConditions : [whereConditions];
-
-  console.time('Query Execution Time');
   const indexedConditions = useIndexes(table, whereConditions);
 
   let pkSets = [];
   for (const indexCond of indexedConditions) {
     const indexCollection = db.collection(`${currentDatabase}_${table.tableName}_idx_${indexCond.indexName}`);
-    if (indexCond.isComposite) {
-      console.log(`Using Composite Index: ${indexCond.indexName}`);
 
+    if (indexCond.isComposite) {
       const compositeAttributes = table.indexFiles.find(
         (index) => index.indexName === indexCond.indexName
       ).indexAttributes;
@@ -128,7 +124,6 @@ async function fetchDocuments(table, whereConditions, currentDatabase) {
         pkSets.push(new Set(filteredPrimaryKeys));
       }
     } else {
-      console.log(`Using Single Index: ${indexCond.indexName}`);
       const indexResults = await indexConditionQuery(indexCond, indexCollection, {});
       if (indexResults.length > 0) {
         const primaryKeys = indexResults
@@ -183,28 +178,18 @@ async function fetchDocuments(table, whereConditions, currentDatabase) {
     );
   }
 
+
   let results = [];
   if (commonPrimaryKeys.length > 0) {
     results = await collection.find({_id: {$in: commonPrimaryKeys}}).toArray();
-    console.log(`Documents Retrieved Using Indexes: ${results.length}`);
+  } else if (indexedConditions.length === 0) {
+    results = await collection.find().toArray();
   }
 
-  console.timeEnd('Query Execution Time');
   return results;
 }
 
-
-function mergeJoinResults(tableResults) {
-  if (tableResults.length === 0) return [];
-
-  return tableResults.reduce((acc, current) => {
-    return acc.flatMap(row1 => current.map(row2 => ({
-      _id: `${row1._id}$${row2._id}`, value: `${row1.value}$${row2.value}`
-    })));
-  });
-}
-
-async function applyProjection(results, columns, table, whereConditions, currentDatabase) {
+async function applyProjection(results, columns, table, whereConditions, currentDatabase, isJoinOperation) {
   const attributeNames = table.structure.attributes.map(attr => attr.attributeName);
   const primaryKeys = table.primaryKey.pkAttributes;
 
@@ -216,8 +201,7 @@ async function applyProjection(results, columns, table, whereConditions, current
     (cond) => !table.indexFiles.some((index) => index.indexAttributes.includes(cond.attribute))
   );
 
-  if (nonIndexedConditions.length > 0) {
-    console.log('Non-Indexed Conditions:', nonIndexedConditions);
+  if (nonIndexedConditions.length > 0 && !isJoinOperation) {
     const allDocuments = await collection.find({}, {projection: {_id: 1, value: 1}}).toArray();
 
     const parsedDocuments = allDocuments.map((doc) => {
@@ -278,7 +262,7 @@ async function applyProjection(results, columns, table, whereConditions, current
 
   return results.map(result => {
     const projected = {};
-    if (nonIndexedConditions.length === 0) {
+    if (nonIndexedConditions.length === 0 && !isJoinOperation) {
       const pkValues = result._id.split('$');
       primaryKeys.forEach((pkAttr, idx) => {
         if (columns.includes(pkAttr) || columns.includes('*')) {
@@ -344,7 +328,6 @@ function writeResultsToFile(results, columns, databaseName, tableName) {
 
 module.exports = {
   fetchDocuments,
-  mergeJoinResults,
   applyProjection,
   removeDuplicates,
   writeResultsToFile
