@@ -6,7 +6,8 @@ const {
   fetchDocuments,
   applyProjection,
   removeDuplicates,
-  writeResultsToFile
+  writeResultsToFile,
+  whereCond
 } = require("../../utils/helpers/indexOptimization");
 const {performJoin} = require("../../utils/helpers/joinAlgorithms");
 
@@ -90,32 +91,8 @@ async function handleSelect(command, socket) {
         joinAlias
       );
 
-
-      // Apply WHERE clause to join results
       if (whereConditions.length > 0) {
-        result = result.filter((row) =>
-          whereConditions.every((cond) => {
-            const columnNameWithAlias = Object.keys(row).find((key) => key.endsWith(`.${cond.attribute}`));
-            const value = row[columnNameWithAlias]?.replace(/'/g, '').trim();
-            switch (cond.operator) {
-              case '=':
-                return value === cond.value;
-              case '>':
-                return value > cond.value;
-              case '>=':
-                return value >= cond.value;
-              case '<':
-                return value < cond.value;
-              case '<=':
-                return value <= cond.value;
-              case 'LIKE':
-                const regex = new RegExp(cond.value.replace(/%/g, '.*'), 'i');
-                return regex.test(value);
-              default:
-                return false;
-            }
-          })
-        );
+        result = whereCond(result, whereConditions);
       }
     } else {
       const mainTableAlias = Object.keys(tableAliasMap)[0];

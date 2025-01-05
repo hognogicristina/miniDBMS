@@ -326,9 +326,36 @@ function writeResultsToFile(results, columns, databaseName, tableName) {
   fileStream.end();
 }
 
+function whereCond(result, whereConditions) {
+  return result.filter((row) =>
+    whereConditions.every((cond) => {
+      const columnNameWithAlias = Object.keys(row).find((key) => key.endsWith(`.${cond.attribute}`));
+      const value = row[columnNameWithAlias]?.replace(/'/g, '').trim();
+      switch (cond.operator) {
+        case '=':
+          return value === cond.value;
+        case '>':
+          return value > cond.value;
+        case '>=':
+          return value >= cond.value;
+        case '<':
+          return value < cond.value;
+        case '<=':
+          return value <= cond.value;
+        case 'LIKE':
+          const regex = new RegExp(cond.value.replace(/%/g, '.*'), 'i');
+          return regex.test(value);
+        default:
+          return false;
+      }
+    })
+  );
+}
+
 module.exports = {
   fetchDocuments,
   applyProjection,
   removeDuplicates,
-  writeResultsToFile
+  writeResultsToFile,
+  whereCond
 };
