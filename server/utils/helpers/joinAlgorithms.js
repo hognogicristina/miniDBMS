@@ -1,6 +1,84 @@
 const {client} = require("../../db/mongoConnection");
+const {fetchDocuments} = require("./indexOptimization");
+const {findTable} = require("../validators/tableValidation");
 
-async function performJoin(mainTableData, joinTableData, joinType, onConditions, mainTable, joinTable, currentDatabase,  mainAlias, joinAlias) {
+async function applyRemainingJoins(initialJoinResult, joinRemainingClause, currentDatabase) {
+  let currentResult = initialJoinResult;
+
+  for (const joinClause of joinRemainingClause) {
+    const {joinType, joinTable, onConditions} = joinClause;
+    const [joinTableName, joinAlias] = joinTable.split(/\s+/);
+    const tableRemaining = findTable(joinTableName);
+
+    const joinTableData = await fetchDocuments(
+      tableRemaining,
+      [],
+      currentDatabase
+    );
+
+    const joinResults = [];
+    const [onCondition] = onConditions;
+    const {left, right} = onCondition;
+    const rightColumnName = right.split('.').pop();
+
+    currentResult.forEach((row) => {
+      const leftValue = row[left];
+      let matched = false;
+
+      joinTableData.forEach((joinRow) => {
+        const joinParsedRow = extractFullRow(
+          joinRow,
+          tableRemaining,
+          joinAlias || joinTableName
+        );
+        const rightValue = joinParsedRow[`${joinAlias || joinTableName}.${rightColumnName}`];
+
+        if (leftValue === rightValue) {
+          joinResults.push({...row, ...joinParsedRow});
+          matched = true;
+        }
+      });
+
+      if (!matched && (joinType === 'left' || joinType === 'full')) {
+        joinResults.push({
+          ...row,
+          ...getNullFilledRow(tableRemaining, joinAlias || joinTableName),
+        });
+      }
+    });
+
+    if (joinType === 'right' || joinType === 'full') {
+      const unmatchedJoinRows = joinTableData.filter((joinRow) => {
+        const joinParsedRow = extractFullRow(
+          joinRow,
+          tableRemaining,
+          joinAlias || joinTableName
+        );
+
+        return !joinResults.some(
+          (resultRow) => resultRow[`${joinAlias || joinTableName}.${rightColumnName}`] === joinParsedRow[`${joinAlias || joinTableName}.${rightColumnName}`]
+        );
+      });
+
+      unmatchedJoinRows.forEach((row) => {
+        joinResults.push({
+          ...getNullFilledRow(
+            tableRemaining,
+            Object.keys(currentResult[0])[0]
+          ),
+          ...row,
+        });
+      });
+    }
+
+    currentResult = joinResults;
+  }
+
+  return currentResult;
+}
+
+async function performJoin(mainTableData, joinTableData, joinType, onConditions, mainTable, joinTable, currentDatabase, mainAlias, joinAlias) {
+
   let result;
 
   const [onCondition] = onConditions;
@@ -13,17 +91,21 @@ async function performJoin(mainTableData, joinTableData, joinType, onConditions,
   const joinIsIndexed = joinTable.indexFiles.find((index) => index.indexAttributes.includes(joinColumnName));
 
   if (mainIsIndexed && joinIsIndexed) {
-    console.log("Using Indexed Nested Loop Join...");
+    console.log(`Using Indexed Nested Loop Join for ${joinType.toUpperCase()}`);
     result = await indexedNestedLoopJoin(
       mainTableData,
+      joinTableData,
+      mainTable,
       joinTable,
+      mainColumnName,
       joinColumnName,
-      currentDatabase,
+      mainAlias,
       joinAlias,
-      mainAlias
+      currentDatabase,
+      joinType
     );
   } else {
-    console.log("Using Sort-Merge Join...");
+    console.log(`Using Sort-Merge Join for ${joinType.toUpperCase()}`);
     result = sortMergeJoin(
       mainTableData,
       joinTableData,
@@ -32,57 +114,87 @@ async function performJoin(mainTableData, joinTableData, joinType, onConditions,
       mainColumnName,
       joinColumnName,
       mainAlias,
-      joinAlias
+      joinAlias,
+      joinType
     );
   }
-
 
   return result;
 }
 
-async function indexedNestedLoopJoin(mainTableData, joinTable, joinColumnName, currentDatabase, joinAlias, mainAlias) {
+async function indexedNestedLoopJoin(
+  mainTableData,
+  joinTableData,
+  mainTable,
+  joinTable,
+  mainColumnName,
+  joinColumnName,
+  mainAlias,
+  joinAlias,
+  currentDatabase,
+  joinType
+) {
   const joinResults = [];
   const db = client.db(currentDatabase);
   const joinCollection = db.collection(joinTable.fileName);
 
-  for (const mainRow of mainTableData) {
-    const mainParsedRow = extractFullRow(mainRow, joinTable, mainAlias);
-    const mainValue = mainParsedRow[`${mainAlias}.${joinColumnName}`];
+  const mainParsedData = mainTableData.map((row) => extractFullRow(row, mainTable, mainAlias));
 
-    if (!mainValue) {
-      continue;
-    }
+  for (const mainParsedRow of mainParsedData) {
+    const mainValue = mainParsedRow[`${mainAlias}.${mainColumnName}`];
+    const joinRows = await joinCollection.find({}).toArray();
+    let matched = false;
 
-    const joinRows = await joinCollection.find({ _id: mainValue }).toArray();
+    for (const joinRow of joinRows) {
+      const joinParsedRow = extractFullRow(joinRow, joinTable, joinAlias);
+      const joinValue = joinParsedRow[`${joinAlias}.${joinColumnName}`];
 
-    if (joinRows.length > 0) {
-      for (const joinRow of joinRows) {
-        const joinParsedRow = extractFullRow(joinRow, joinTable, joinAlias);
-        joinResults.push({ ...mainParsedRow, ...joinParsedRow });
+      if (mainValue === joinValue) {
+        const mergedRow = {...mainParsedRow, ...joinParsedRow};
+        joinResults.push(mergedRow);
+        matched = true;
       }
     }
+
+    if (!matched && (joinType === 'left' || joinType === 'full')) {
+      joinResults.push({...mainParsedRow, ...getNullFilledRow(joinTable, joinAlias)});
+    }
+  }
+
+  if (joinType === 'right' || joinType === 'full') {
+    const joinParsedData = joinTableData.map((row) => extractFullRow(row, joinTable, joinAlias));
+    const matchedSet = new Set(joinResults.map((row) => row[`${joinAlias}.${joinColumnName}`]));
+
+    joinParsedData.forEach((joinRow) => {
+      if (!matchedSet.has(joinRow[`${joinAlias}.${joinColumnName}`])) {
+        joinResults.push({...getNullFilledRow(mainTable, mainAlias), ...joinRow});
+      }
+    });
   }
 
   return joinResults;
 }
 
-function sortMergeJoin(mainTableData, joinTableData, mainTable, joinTable, mainColumnName, joinColumnName, mainAlias, joinAlias) {
+function sortMergeJoin(
+  mainTableData,
+  joinTableData,
+  mainTable,
+  joinTable,
+  mainColumnName,
+  joinColumnName,
+  mainAlias,
+  joinAlias,
+  joinType
+) {
   const joinResults = [];
+  const unmatchedMain = [];
+  const unmatchedJoin = [];
 
   const mainParsedData = mainTableData.map((row) => extractFullRow(row, mainTable, mainAlias));
   const joinParsedData = joinTableData.map((row) => extractFullRow(row, joinTable, joinAlias));
 
-  mainParsedData.sort((a, b) => {
-    const valueA = a[`${mainAlias}.${mainColumnName}`] || '';
-    const valueB = b[`${mainAlias}.${mainColumnName}`] || '';
-    return valueA.localeCompare(valueB);
-  });
-
-  joinParsedData.sort((a, b) => {
-    const valueA = a[`${joinAlias}.${joinColumnName}`] || '';
-    const valueB = b[`${joinAlias}.${joinColumnName}`] || '';
-    return valueA.localeCompare(valueB);
-  });
+  mainParsedData.sort((a, b) => (a[`${mainAlias}.${mainColumnName}`] || '').localeCompare(b[`${mainAlias}.${mainColumnName}`] || ''));
+  joinParsedData.sort((a, b) => (a[`${joinAlias}.${joinColumnName}`] || '').localeCompare(b[`${joinAlias}.${joinColumnName}`] || ''));
 
   let i = 0, j = 0;
 
@@ -91,17 +203,39 @@ function sortMergeJoin(mainTableData, joinTableData, mainTable, joinTable, mainC
     const joinValue = joinParsedData[j][`${joinAlias}.${joinColumnName}`];
 
     if (mainValue === joinValue) {
-      joinResults.push({ ...mainParsedData[i], ...joinParsedData[j] });
+      joinResults.push({...mainParsedData[i], ...joinParsedData[j]});
       i++;
       j++;
     } else if (mainValue < joinValue) {
+      if (joinType === 'left' || joinType === 'full') {
+        unmatchedMain.push(mainParsedData[i]);
+      }
       i++;
     } else {
+      if (joinType === 'right' || joinType === 'full') {
+        unmatchedJoin.push(joinParsedData[j]);
+      }
       j++;
     }
   }
 
+  if (joinType === 'left' || joinType === 'full') {
+    unmatchedMain.forEach((row) => joinResults.push({...row, ...getNullFilledRow(joinTable, joinAlias)}));
+  }
+
+  if (joinType === 'right' || joinType === 'full') {
+    unmatchedJoin.forEach((row) => joinResults.push({...getNullFilledRow(mainTable, mainAlias), ...row}));
+  }
+
   return joinResults;
+}
+
+function getNullFilledRow(table, alias) {
+  const row = {};
+  table.structure.attributes.forEach((attr) => {
+    row[`${alias}.${attr.attributeName}`] = null;
+  });
+  return row;
 }
 
 function extractFullRow(document, table, alias) {
@@ -127,5 +261,4 @@ function extractFullRow(document, table, alias) {
   return row;
 }
 
-
-module.exports = {performJoin};
+module.exports = {performJoin, applyRemainingJoins};

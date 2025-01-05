@@ -289,7 +289,7 @@ async function applyProjection(results, columns, table, whereConditions, current
     } else {
       columns.forEach(col => {
         if (col in result || columns.includes('*')) {
-          projected[col] = result[col];
+          projected[col] = result[col] !== undefined ? result[col] : null;
         }
       });
     }
@@ -329,8 +329,11 @@ function writeResultsToFile(results, columns, databaseName, tableName) {
 function whereCond(result, whereConditions) {
   return result.filter((row) =>
     whereConditions.every((cond) => {
-      const columnNameWithAlias = Object.keys(row).find((key) => key.endsWith(`.${cond.attribute}`));
+      const columnNameWithAlias = Object.keys(row).find((key) =>
+        key.endsWith(`.${cond.attribute}`)
+      );
       const value = row[columnNameWithAlias]?.replace(/'/g, '').trim();
+
       switch (cond.operator) {
         case '=':
           return value === cond.value;
@@ -342,9 +345,18 @@ function whereCond(result, whereConditions) {
           return value < cond.value;
         case '<=':
           return value <= cond.value;
-        case 'LIKE':
-          const regex = new RegExp(cond.value.replace(/%/g, '.*'), 'i');
-          return regex.test(value);
+        case 'LIKE': {
+          const likeValue = cond.value.replace(/'/g, '');
+          if (likeValue.startsWith('%') && likeValue.endsWith('%')) {
+            return new RegExp(likeValue.slice(1, -1), 'i').test(value);
+          } else if (likeValue.startsWith('%')) {
+            return new RegExp(`${likeValue.slice(1)}$`, 'i').test(value);
+          } else if (likeValue.endsWith('%')) {
+            return new RegExp(`^${likeValue.slice(0, -1)}`, 'i').test(value);
+          } else {
+            return new RegExp(`^${likeValue}$`, 'i').test(value);
+          }
+        }
         default:
           return false;
       }

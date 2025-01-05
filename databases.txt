@@ -154,11 +154,12 @@ select Name from Students3 where GroupID = 243
 select * from Grades where StudID = 345 and DiscID like 'PF%'
 
 Laboratory 5
-select S.StudID, S.Name, G.Year from Students S inner join Groups G on S.GroupID = G.GroupID where G.Year > 1
-select S.StudID, S.Name, G.Year from Students S inner join Groups G on S.GroupID = G.GroupID
-select G.GroupName, S.SubjectName from Groups G inner join Subjects S on G.DepartmentID = S.DepartmentID
+select S.GroupID, S.Name, G.GroupID, G.Year from Students S full join Groups G on S.GroupID = G.GroupID where G.Year > 2
+select G.DepartmentID, G.GroupName, G.Year, S.DepartmentID, S.SubjectName from Groups G right join Subjects S on G.DepartmentID = S.DepartmentID where S.SubjectName like '%_U%'
+select G.DepartmentID, G.GroupName, G.Year, S.DepartmentID, S.SubjectName from Groups G inner join Subjects S on G.DepartmentID = S.DepartmentID where S.SubjectName like '%_U%' and G.Year > 2
 
-select S.Name, G.Grade, Ss.SubjectName from Students S inner join Grades G on S.StudID = G.StudID right join Subjects Ss on G.DiscID = Ss.SubjectID
+select S.GroupID, G.GroupID, G.DepartmentID, D.DepartmentID from Students S inner join Groups G on S.GroupID = G.GroupID inner join Departments D on G.DepartmentID = D.DepartmentID
+select S.GroupID, G.GroupID, G.DepartmentID, D.DepartmentID from Students S inner join Groups G on S.GroupID = G.GroupID inner join Departments D on G.DepartmentID = D.DepartmentID
 select S.Name, G.GroupName, D.DepartmentName, Ss.SubjectName from Students S inner join Groups G on S.GroupID = G.GroupID inner join Departments D on G.DepartmentID = D.DepartmentID inner join Subjects Ss on D.DepartmentID = Ss.DepartmentID
 
 db.School_Students.find()

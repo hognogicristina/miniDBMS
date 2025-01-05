@@ -9,7 +9,7 @@ const {
   writeResultsToFile,
   whereCond
 } = require("../../utils/helpers/indexOptimization");
-const {performJoin} = require("../../utils/helpers/joinAlgorithms");
+const {performJoin, applyRemainingJoins} = require("../../utils/helpers/joinAlgorithms");
 
 async function handleSelect(command, socket) {
   const currentDatabase = getCurrentDatabase();
@@ -22,7 +22,7 @@ async function handleSelect(command, socket) {
       return socket.write(parsedCommand);
     }
 
-    const {tables, columns, whereConditions, distinct, joinClause} = parsedCommand;
+    const { tables, columns, whereConditions, distinct, joinClause, joinRemainingClause } = parsedCommand;
 
     const tableAliasMap = {};
     for (const tableEntry of tables) {
@@ -36,18 +36,6 @@ async function handleSelect(command, socket) {
       tableAliasMap[alias || tableName] = tableData;
     }
 
-    if (joinClause) {
-      const {joinTable} = joinClause;
-      const [joinTableName, joinAlias] = joinTable.split(/\s+/);
-
-      const joinTableData = findTable(joinTableName);
-      if (typeof joinTableData === 'string') {
-        return socket.write(joinTableData);
-      }
-
-      tableAliasMap[joinAlias || joinTableName] = joinTableData;
-    }
-
     const isJoinOperation = Boolean(joinClause);
 
     const validationError = validateWhereColumns(whereConditions, tableAliasMap, isJoinOperation);
@@ -57,7 +45,7 @@ async function handleSelect(command, socket) {
 
     let result;
     if (isJoinOperation) {
-      const {joinType, onConditions} = joinClause;
+      const { joinType, onConditions } = joinClause;
       const [mainTableAlias] = Object.keys(tableAliasMap);
       const joinAlias = Object.keys(tableAliasMap).find(
         (alias) => alias !== mainTableAlias
@@ -75,10 +63,6 @@ async function handleSelect(command, socket) {
         currentDatabase
       );
 
-      if (!Array.isArray(mainTableData) || !Array.isArray(joinTableData)) {
-        return socket.write("ERROR: Failed to fetch data for join operation.");
-      }
-
       result = await performJoin(
         mainTableData,
         joinTableData,
@@ -94,19 +78,21 @@ async function handleSelect(command, socket) {
       if (whereConditions.length > 0) {
         result = whereCond(result, whereConditions);
       }
+
+      if (joinRemainingClause && joinRemainingClause.length > 0) {
+        result = await applyRemainingJoins(
+          result,
+          joinRemainingClause,
+          currentDatabase
+        );
+      }
     } else {
       const mainTableAlias = Object.keys(tableAliasMap)[0];
-      const tableResults = await fetchDocuments(
+      result = await fetchDocuments(
         tableAliasMap[mainTableAlias],
         whereConditions,
         currentDatabase
       );
-
-      if (!Array.isArray(tableResults)) {
-        return socket.write("ERROR: Failed to fetch data.");
-      }
-
-      result = tableResults;
     }
 
     const selectedColumns = columns.includes('*')
@@ -145,4 +131,4 @@ async function handleSelect(command, socket) {
   }
 }
 
-module.exports = {handleSelect};
+module.exports = { handleSelect };

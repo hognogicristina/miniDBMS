@@ -107,10 +107,31 @@ function missingPKValueError(primaryKey, conditionMap) {
   }
 }
 
+const parseJoinClauses = (text) => {
+  const joinClauses = [];
+  const joinRegex = /\s*(inner|left|right|full)\s+join\s+(.+?)\s+on\s+(.+?)(?=\s+(inner|left|right|full)\s+join|$)/gi;
+
+  let match;
+  while ((match = joinRegex.exec(text)) !== null) {
+    const joinType = match[1].toLowerCase();
+    const joinTable = match[2].trim();
+    const onConditions = match[3]
+      .split('and')
+      .map((cond) => {
+        const [left, right] = cond.split('=').map((s) => s.trim());
+        return {left, right};
+      });
+
+    joinClauses.push({joinType, joinTable, onConditions});
+  }
+
+  return joinClauses;
+};
+
 function parseSelectCommand(command) {
   const commandText = command.join(" ");
+  const joinCount = (commandText.match(/\bjoin\b/gi) || []).length;
   const selectMatch = commandText.match(/select\s+(distinct\s+)?(.+?)\s+from\s+(.+?)(\s+where\s+(.+))?$/i);
-
   if (!selectMatch) return "ERROR: Invalid SELECT command";
 
   const distinct = Boolean(selectMatch[1]);
@@ -127,12 +148,28 @@ function parseSelectCommand(command) {
     const joinType = joinMatch[2].toLowerCase();
     const onConditions = joinMatch[4].split('and').map((cond) => {
       const [left, right] = cond.split('=').map((s) => s.trim());
-      return {left, right};
+      const adjustedRight = right.split(/\s+/)[0];
+      return {left, right: adjustedRight};
     });
 
     joinClause = {joinType, joinTable: tables[1], onConditions};
   } else {
     tables = tablesText.split(',').map((tbl) => tbl.trim());
+  }
+
+  let joinRemainingClause;
+  if (joinCount > 1) {
+    const secondJoinRegex = /^(.+?\s+inner\s+join\s+.+?\s+on\s+.+?)\s+(inner|left|right|full)\s+join/i;
+    const secondJoinMatch = tablesText.match(secondJoinRegex);
+
+    let matchedText = '';
+    let remainingTablesText = tablesText;
+
+    if (secondJoinMatch) {
+      matchedText = secondJoinMatch[1].trim();
+      remainingTablesText = tablesText.slice(matchedText.length).trim();
+    }
+    joinRemainingClause = parseJoinClauses(remainingTablesText);
   }
 
   const whereClause = selectMatch[5] || "";
@@ -168,7 +205,7 @@ function parseSelectCommand(command) {
   const invalidCondition = whereConditions.find((cond) => typeof cond === 'string');
   if (invalidCondition) return invalidCondition;
 
-  return {columns, tables, whereConditions, distinct, joinClause};
+  return {columns, tables, whereConditions, distinct, joinClause, joinRemainingClause};
 }
 
 module.exports = {
