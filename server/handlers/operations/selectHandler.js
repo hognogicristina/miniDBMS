@@ -22,7 +22,7 @@ async function handleSelect(command, socket) {
       return socket.write(parsedCommand);
     }
 
-    const { tables, columns, whereConditions, distinct, joinClause, joinRemainingClause } = parsedCommand;
+    const {tables, columns, whereConditions, distinct, joinClause, joinRemainingClause} = parsedCommand;
 
     const tableAliasMap = {};
     for (const tableEntry of tables) {
@@ -45,7 +45,7 @@ async function handleSelect(command, socket) {
 
     let result;
     if (isJoinOperation) {
-      const { joinType, onConditions } = joinClause;
+      const {joinType, onConditions} = joinClause;
       const [mainTableAlias] = Object.keys(tableAliasMap);
       const joinAlias = Object.keys(tableAliasMap).find(
         (alias) => alias !== mainTableAlias
@@ -131,4 +131,4 @@ async function handleSelect(command, socket) {
   }
 }
 
-module.exports = { handleSelect };
+module.exports = {handleSelect};

@@ -78,7 +78,6 @@ async function applyRemainingJoins(initialJoinResult, joinRemainingClause, curre
 }
 
 async function performJoin(mainTableData, joinTableData, joinType, onConditions, mainTable, joinTable, currentDatabase, mainAlias, joinAlias) {
-
   let result;
 
   const [onCondition] = onConditions;
