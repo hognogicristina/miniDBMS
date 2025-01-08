@@ -149,7 +149,6 @@ async function handleSelect(command, socket) {
     );
     socket.write('check select.txt');
   } catch (error) {
-    console.error(error);
     socket.write("ERROR: Failed to execute SELECT command");
   }
 }
