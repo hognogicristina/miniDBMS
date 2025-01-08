@@ -1,5 +1,9 @@
 For School table Groups:
 "Abigayle", "Group_jfzFP", "9"
+"Adela", "Group_AcLua", "5.833333333333333"
 "Adell", "Group_uxsAL", "6"
+"Alexandro", "Group_FcEqM", "6.5"
 "Alf", "Group_PkSaY", "7.5"
+"Amalia", "Group_Xapql", "9"
 "Ardith", "Group_wgdFV", "8.25"
+"Arturo", "Group_YuZHu", "6.666666666666667"
